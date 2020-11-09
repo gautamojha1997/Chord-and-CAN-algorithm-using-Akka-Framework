@@ -3,6 +3,7 @@ package com.simulation
 
 import akka.actor.{ActorSystem, Props}
 import com.simulation.actors.users.UserActor
+import com.simulation.actors.users.UserActor.createUserActor
 import com.typesafe.config.ConfigFactory
 
 class ActorDriver {
@@ -19,7 +20,7 @@ class ActorDriver {
   val supervisorActor = actorSystem.actorOf(Props(new SupervisorActor(1, numNodes)),"supervisor_actor")
 
 
-  numUsers.foreach {
+  (0 to numUsers).foreach {
     i => userActor ! createUserActor(i + 1)
   }
 
