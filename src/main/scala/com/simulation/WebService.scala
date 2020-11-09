@@ -1,4 +1,4 @@
-package com.example
+package com.simulation
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
@@ -44,9 +44,9 @@ object WebService {
           path("load"){
             parameters("id"){
               (id) =>
-              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
-                "Added: " + id
-              ))
+                complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                  "Added: " + id
+                ))
             }
           },
 

@@ -1,22 +1,31 @@
-lazy val akkaHttpVersion = "10.2.1"
-lazy val akkaVersion    = "2.6.10"
+name := "group_6"
 
-lazy val root = (project in file(".")).
-  settings(
-    inThisBuild(List(
-      organization    := "com.example",
-      scalaVersion    := "2.13.3"
-    )),
-    name := "APIDemo",
-    libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-http"                % akkaHttpVersion,
-      "com.typesafe.akka" %% "akka-http-spray-json"     % akkaHttpVersion,
-      "com.typesafe.akka" %% "akka-actor-typed"         % akkaVersion,
-      "com.typesafe.akka" %% "akka-stream"              % akkaVersion,
-      "ch.qos.logback"    % "logback-classic"           % "1.2.3",
+version := "0.1"
 
-      "com.typesafe.akka" %% "akka-http-testkit"        % akkaHttpVersion % Test,
-      "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion     % Test,
-      "org.scalatest"     %% "scalatest"                % "3.0.8"         % Test
-    )
-  )
+scalaVersion := "2.13.3"
+
+libraryDependencies ++= Seq(
+
+  "com.typesafe" % "config" % "1.4.1",
+
+  "junit" % "junit" % "4.13.1" % Test,
+
+  "com.typesafe.akka" %% "akka-actor-typed" % "2.6.10",
+
+  "com.typesafe.akka" %% "akka-cluster-typed" % "2.6.10",
+
+  "com.typesafe.akka" %% "akka-actor-testkit-typed" % "2.6.10" % Test,
+
+  "com.typesafe.akka" %% "akka-remote" % "2.6.10",
+
+  "com.typesafe.akka" %% "akka-http" % "10.2.1",
+
+  "com.typesafe.akka" %% "akka-stream" % "2.6.10",
+
+  "com.typesafe.akka" %% "akka-stream-testkit" % "2.6.10",
+
+  "com.typesafe.akka" %% "akka-http-testkit" % "10.2.1",
+
+  "ch.qos.logback"    % "logback-classic" % "1.2.3",
+
+)
