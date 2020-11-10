@@ -28,4 +28,6 @@ libraryDependencies ++= Seq(
 
   "ch.qos.logback"    % "logback-classic" % "1.2.3",
 
+  "org.ddahl" %% "rscala" % "3.2.19",
+
 )

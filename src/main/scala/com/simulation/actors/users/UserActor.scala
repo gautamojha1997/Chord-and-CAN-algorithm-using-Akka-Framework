@@ -3,7 +3,6 @@ package com.simulation.actors.users
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.util.Timeout
 import com.simulation.actors.users.UserActor.{createUserActor, loadData, lookupData}
-
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
@@ -24,13 +23,12 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
 
     case createUserActor(id) =>
       val userActor = context.actorOf(Props(new UserActor(id, actorSystem)), "user_actor-" + id)
-      sender() ! userActor.path
 
   }
 }
 
 object UserActor {
-  case class loadData(data:Data)
-  case class lookupData(data:Data)
+  case class loadData(data:)
+  case class lookupData(data:)
   case class createUserActor(id:Int)
 }

@@ -5,6 +5,7 @@ import akka.actor.{ActorSystem, Props}
 import com.simulation.actors.users.UserActor
 import com.simulation.actors.users.UserActor.createUserActor
 import com.typesafe.config.ConfigFactory
+import org.ddahl.rscala.RClient
 
 class ActorDriver {
 
@@ -23,6 +24,23 @@ class ActorDriver {
   (0 to numUsers).foreach {
     i => userActor ! createUserActor(i + 1)
   }
+
+  def createServerNode(): {
+
+  }
+
+  def loadData(): {
+
+  }
+
+  def lookupData():{
+
+  }
+
+  def printSnapshot():{
+
+  }
+
 
 
 
