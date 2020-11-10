@@ -10,19 +10,19 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
   val timeout = Timeout(10 seconds)
   override def receive: Receive = {
     case loadData(data) =>
-      val supervisorActor = actorSystem.actorSelection("akka://actor-system/user/supervisor_actor")
+      val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
       val nextActor = supervisorActor ? loadData(data)
       val result = Await.result(nextActor, timeout.duration)
       sender() ! result
 
     case lookupData(data) =>
-      val supervisorActor = actorSystem.actorSelection("akka://actor-system/user/supervisor_actor")
+      val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
       val nextActor = supervisorActor ? lookupData(data)
       val result = Await.result(nextActor, timeout.duration)
       sender() ! result
 
     case createUserActor(id) =>
-      val userActor = context.actorOf(Props(new UserActor(id, actorSystem)), "user_actor-" + id)
+      val userActor = context.actorOf(Props(new UserActor(id, actorSystem)), "" + id)
 
   }
 }

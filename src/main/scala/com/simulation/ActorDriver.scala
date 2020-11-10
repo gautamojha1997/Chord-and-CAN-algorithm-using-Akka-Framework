@@ -2,10 +2,13 @@ package com.simulation
 
 
 import akka.actor.{ActorSystem, Props}
+import akka.util.Timeout
 import com.simulation.actors.users.UserActor
 import com.simulation.actors.users.UserActor.createUserActor
 import com.typesafe.config.ConfigFactory
 import org.ddahl.rscala.RClient
+
+import scala.concurrent.Await
 
 class ActorDriver {
 
@@ -25,22 +28,37 @@ class ActorDriver {
     i => userActor ! createUserActor(i)
   }
 
-  def createServerNode(): {
+  var serverActorCount = 0
+  val RClientObj = RClient()
 
+  val timeout = Timeout(10 seconds)
+
+  def createServerNode(): Unit = {
+    if(numNodes > serverActorCount) {
+      serverActor ? createServerActor (serverActorCount)
+      serverActorCount += 1
+    }
   }
 
-  def loadData(): {
-
+  def loadData(id: Int): Unit = {
+    val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
+    val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
+    dataHandlerActor ! loadData(id)
   }
 
-  def lookupData():{
-
+  def lookupData(id: Int): Any = {
+    val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
+    val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
+    val dataRetrieved = dataHandlerActor ? lookupData(id)
+    val result = Await.result(dataRetrieved, timeout.duration)
+    result
   }
 
-  def printSnapshot():{
-
+  def printSnapshot(): Any = {
+    val snapshotRetrieved = supervisorActor ? getSnapshot
+    val result = Await.result(snapshotRetrieved, timeout.duration)
+    result
   }
-
 
 
 
