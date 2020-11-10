@@ -7,7 +7,6 @@ import com.simulation.actors.users.UserActor
 import com.simulation.actors.users.UserActor.createUserActor
 import com.typesafe.config.ConfigFactory
 import org.ddahl.rscala.RClient
-
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
@@ -47,10 +46,10 @@ class ActorDriver {
     dataHandlerActor ! loadData(id)
   }
 
-  def lookupData(id: Int): Any = {
+  def getData(id: Int): Any = {
     val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
     val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
-    val dataRetrieved = dataHandlerActor ? lookupData(id)
+    val dataRetrieved = dataHandlerActor ? getData(id)
     val result = Await.result(dataRetrieved, timeout.duration)
     result
   }

@@ -2,7 +2,8 @@ package com.simulation.actors.users
 
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.util.Timeout
-import com.simulation.actors.users.UserActor.{createUserActor, loadData, lookupData}
+import com.simulation.actors.users.UserActor.{createUserActor, getData, loadData}
+
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
@@ -15,9 +16,9 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
       val result = Await.result(nextActor, timeout.duration)
       sender() ! result
 
-    case lookupData(data) =>
+    case getData(data) =>
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
-      val nextActor = supervisorActor ? lookupData(data)
+      val nextActor = supervisorActor ? getData(data)
       val result = Await.result(nextActor, timeout.duration)
       sender() ! result
 
@@ -29,6 +30,6 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
 
 object UserActor {
   case class loadData(data:)
-  case class lookupData(data:)
+  case class getData(data:)
   case class createUserActor(id:Int)
 }
