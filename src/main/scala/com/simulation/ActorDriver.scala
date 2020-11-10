@@ -2,11 +2,17 @@ package com.simulation
 
 
 import akka.actor.{ActorSystem, Props}
+import akka.pattern.ask
+import akka.remote.transport.ActorTransportAdapter.AskTimeout
+import com.simulation.actors.servers.ServerActor
+import com.simulation.actors.supervisors.SupervisorActor
 import akka.util.Timeout
+import com.simulation.actors.supervisors.SupervisorActor.createServerActor
 import com.simulation.actors.users.UserActor
 import com.simulation.actors.users.UserActor.createUserActor
 import com.typesafe.config.ConfigFactory
 import org.ddahl.rscala.RClient
+
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
@@ -35,7 +41,7 @@ class ActorDriver {
 
   def createServerNode(): Unit = {
     if(numNodes > serverActorCount) {
-      serverActor ? createServerActor (serverActorCount)
+      serverActor ? createServerActor(serverActorCount)
       serverActorCount += 1
     }
   }
