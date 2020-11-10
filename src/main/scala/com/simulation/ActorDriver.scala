@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigFactory
 import org.ddahl.rscala.RClient
 
 import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 
 class ActorDriver {
 
@@ -59,8 +60,4 @@ class ActorDriver {
     val result = Await.result(snapshotRetrieved, timeout.duration)
     result
   }
-
-
-
-
 }
