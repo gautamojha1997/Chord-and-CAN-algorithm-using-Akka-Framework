@@ -29,10 +29,7 @@ class ActorDriver {
   val userActor = actorSystem.actorOf(Props(new UserActor(1, actorSystem)), "user_actor")
   val supervisorActor = actorSystem.actorOf(Props(new SupervisorActor(1, numNodes)),"supervisor_actor")
 
-
-  (1 to numUsers).foreach {
-    i => userActor ! createUserActor(i)
-  }
+  List.tabulate(numUsers)(i => userActor ! createUserActor(i))
 
   var serverActorCount = 0
   val RClientObj = RClient()

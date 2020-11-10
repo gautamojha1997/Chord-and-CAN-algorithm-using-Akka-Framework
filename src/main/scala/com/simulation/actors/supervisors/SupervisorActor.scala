@@ -20,6 +20,7 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
   var nodes: mutable.Map[Int, String] = scala.collection.mutable.TreeMap[Int, String]()
   val system: ActorSystem = ActorSystem()
   val timeout = Timeout(10 seconds)
+  var hash:String = _
 
 
   override def receive: Receive = {
@@ -27,26 +28,33 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
     case createServerActor(nodeCounter) => {
       val serverActor = system.actorOf(Props(new ServerActor(nodeCounter, numNodes)), "server_actor_" + nodeCounter)
       nodes += (nodeCounter -> serverActor.path.toString)
-      nodeCounter += 1
-      serverActor ! initializeFingerTable
+      hash = md5(nodeCounter.toString, numNodes).mkString(",")
+      //nodeCounter += 1
+      serverActor ! initializeFingerTable(hash)
       for ((k,v) <- nodes) {
           val serverActor = context.system.actorSelection("akka://actor-system/user/server_actor_"+k)
           serverActor ! updateFingerTable
       }
     }
+
     case getData(id) => {
       val serverActor = context.system.actorSelection("akka://actor-system/user/server_actor_0")
       val data = serverActor ? getData(id)
       val result = Await.result(data, timeout.duration)
       sender() ! result
     }
+
     // implement hashing function & load the data in appropriate node
     case loadData(data) => {
       val hashKey = md5(data.id.toString)
     }
   }
 
-  def md5(s: String): Array[Byte] = { MessageDigest.getInstance("MD5").digest(s.getBytes) }
+  def md5(s: String, bitsNumber: Int): String = {
+    val md = java.security.MessageDigest.getInstance("MD5").digest(s.getBytes("UTF-8")).map("%02x".format(_)).mkString
+    val bin = BigInt(md, 16).toString(2).take(bitsNumber)
+    Integer.parseInt(bin, 2).toString
+  }
 }
 
 object SupervisorActor {
