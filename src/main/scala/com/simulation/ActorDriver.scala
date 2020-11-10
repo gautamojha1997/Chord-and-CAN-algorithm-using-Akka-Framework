@@ -21,8 +21,8 @@ class ActorDriver {
   val supervisorActor = actorSystem.actorOf(Props(new SupervisorActor(1, numNodes)),"supervisor_actor")
 
 
-  (0 to numUsers).foreach {
-    i => userActor ! createUserActor(i + 1)
+  (1 to numUsers).foreach {
+    i => userActor ! createUserActor(i)
   }
 
   def createServerNode(): {
