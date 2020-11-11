@@ -6,7 +6,7 @@ import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor
-import com.simulation.actors.servers.ServerActor.{initializeFingerTable, updateFingerTable}
+import com.simulation.actors.servers.ServerActor.{initializeFingerTable, initializeFirstFingerTable, updateFingerTable}
 import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getData}
 import com.simulation.actors.users.UserActor.loadData
 import com.simulation.beans.EntityDefinition
@@ -14,10 +14,13 @@ import com.simulation.beans.EntityDefinition
 import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.util.Random
 
 class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
-  var nodes: mutable.Map[Int, String] = scala.collection.mutable.TreeMap[Int, String]()
+  //var nodes: mutable.Map[Int, String] = scala.collection.mutable.TreeMap[Int, String]()
+  var nodes: mutable.Map[String, Int] = scala.collection.mutable.HashMap[String, Int]()
+  var set: mutable.TreeSet[Int] = scala.collection.mutable.TreeSet[Int]()
   val system: ActorSystem = ActorSystem()
   val timeout = Timeout(10 seconds)
   var hash:String = _
@@ -27,14 +30,22 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
     case createServerActor(nodeCounter) => {
       val serverActor = system.actorOf(Props(new ServerActor(nodeCounter, numNodes)), "server_actor_" + nodeCounter)
-      nodes += (nodeCounter -> serverActor.path.toString)
       hash = md5(nodeCounter.toString, numNodes).mkString(",")
       //nodeCounter += 1
-      serverActor ! initializeFingerTable(hash)
-      for ((k,v) <- nodes) {
+      if(nodes.nonEmpty){
+
+        serverActor ! initializeFingerTable(hash, "akka://actor-system/user/server_actor_"+Random.between(0, set.size))
+
+        /*for ((k,v) <- nodes) {
           val serverActor = context.system.actorSelection("akka://actor-system/user/server_actor_"+k)
           serverActor ! updateFingerTable
+        }*/
       }
+      else
+        serverActor ! initializeFirstFingerTable(hash)
+
+      nodes += (serverActor.path.toString -> nodeCounter)
+      set += nodeCounter
     }
 
     case getData(id) => {
