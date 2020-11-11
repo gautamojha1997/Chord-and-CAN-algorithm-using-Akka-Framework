@@ -6,7 +6,7 @@ import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor
-import com.simulation.actors.servers.ServerActor.{initializeFingerTable, initializeFirstFingerTable, updateFingerTable}
+import com.simulation.actors.servers.ServerActor.{initializeFingerTable, initializeFirstFingerTable, updateFingerTable, updateOthers}
 import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getData}
 import com.simulation.actors.users.UserActor.loadData
 import com.simulation.beans.EntityDefinition
@@ -35,6 +35,7 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
       if(nodes.nonEmpty){
 
         serverActor ! initializeFingerTable(hash, "akka://actor-system/user/server_actor_"+Random.between(0, set.size))
+        serverActor ! updateOthers(nodeCounter)
 
         /*for ((k,v) <- nodes) {
           val serverActor = context.system.actorSelection("akka://actor-system/user/server_actor_"+k)
