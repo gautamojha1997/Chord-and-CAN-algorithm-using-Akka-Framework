@@ -13,9 +13,11 @@ import scala.concurrent.duration.DurationInt
 class ServerActor(id: Int, numNodes: Int) extends Actor {
 
   var dht = scala.collection.mutable.HashMap[Int, Int]()
-  var finger_table = scala.collection.mutable.LinkedHashMap[Int, String]()
-  var predecessor: String = _
+  var finger_table = scala.collection.mutable.LinkedHashMap[Int, Int]()
+  var predecessor: Int = _
   val timeout = Timeout(10 seconds)
+  val buckets = (Math.log(numNodes)/Math.log(2.0)).toInt
+  val SERVER_ACTOR_PATH = "akka://actor-system/user/server_actor_"
 
   // Check if s belongs from n to fingerIthEntry
   def belongs(s:Int, n: Int, fingerIthEntry_int: Int): Boolean = {
@@ -43,53 +45,51 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   override def receive = {
 
     case initializeFirstFingerTable(hash: String) =>
-      val nodePath = self.path.toString
-      List.tabulate(numNodes)(x => finger_table += (((hash.toInt + math.pow(2, x)) % math.pow(2, numNodes)).toInt -> nodePath))
-      predecessor = nodePath
+      List.tabulate(buckets)(x => finger_table += (((hash.toInt + math.pow(2, x)) % math.pow(2, buckets)).toInt -> hash.toInt))
+      predecessor = hash.toInt
 
-    case updatePredecessor(nodePath: String) =>
-      predecessor = nodePath
+    case updatePredecessor(nodeIndex: Int) =>
+      predecessor = nodeIndex
 
-    case getPredecessor() =>
-      sender() ! predecessor
+    case getPredecessor(nodeIndex: Int) =>
 
-    case initializeFingerTable(hash: String, arbitraryPath: String) =>
-      val firstKey = ((hash.toInt + math.pow(2, 0)) % math.pow(2, numNodes)).toInt
-      val arbitraryNode = context.system.actorSelection(arbitraryPath)
-      val future_firstVal = arbitraryNode ? findSuccessor(firstKey)
-      val firstVal = Await.result(future_firstVal, timeout.duration).toString
+
+    case initializeFingerTable(hash: String, nodeIndex: Int) =>
+
+      val firstKey = ((hash.toInt + math.pow(2, 0)) % math.pow(2, buckets)).toInt
+      val arbitraryNode = context.system.actorSelection(SERVER_ACTOR_PATH + nodeIndex)
+      val successorValue = arbitraryNode ? findSuccessor(firstKey)
+      val firstVal = Await.result(successorValue, timeout.duration)
       finger_table += (firstKey -> firstVal)
-      val successor = context.system.actorSelection(finger_table(0))
-      val future_predecessor = successor ? getPredecessor()
-      predecessor = Await.result(future_predecessor, timeout.duration).toString
-      successor ! updatePredecessor(self.path.toString)
+      val successor = context.system.actorSelection(SERVER_ACTOR_PATH + finger_table(0))
+      val futurePredecessor = successor ? getPredecessor()
+      Await.result(futurePredecessor, timeout.duration).toString
+      successor ! updatePredecessor(nodeIndex)
 
       List.tabulate(numNodes) ({ x =>
-        val key = ((hash.toInt + math.pow(2, x + 1)) % math.pow(2, numNodes)).toInt
-        val future_Val = arbitraryNode ? findSuccessor(key)
-        val Val = Await.result(future_Val, timeout.duration).toString
+        val key = ((hash.toInt + math.pow(2, x + 1)) % math.pow(2, buckets)).toInt
+        val successorValue = arbitraryNode ? findSuccessor(key)
+        val Val = Await.result(successorValue, timeout.duration)
         finger_table += (key -> Val)
       })
 
-    case updateOthers(nodeVal: Int) =>
-      List.tabulate(numNodes)(i => {
-          val future_p = self ? findSuccessor((nodeVal - math.pow(2, i)).toInt)
-          val p_str = Await.result(future_p, timeout.duration).toString
-          val p_obj = context.system.actorSelection(p_str)
-          p_obj ! updateTable(nodeVal, i)
+    case updateOthers(nodeIndex: Int) =>
+      List.tabulate(buckets)(i => {
+          val predecessorValue = getPredecessor((nodeIndex - math.pow(2, i)).toInt)
+          val predecessorObject = context.system.actorSelection(SERVER_ACTOR_PATH + predecessorValue)
+          predecessorObject ! updateTable(predecessorValue, nodeIndex, i)
         })
 
-      // p_obj -> n
-      // nodeVal -> s
+      // predecessorValue -> n
+      // nodeIndex -> s
       // i -> i
-    case updateTable(nodeVal: Int, i: Int) =>
-      val n:Int = id
-      val fingerIthEntry_str: String = finger_table(i)
-      val fingerIthEntry_int: Int = fingerIthEntry_str.charAt(fingerIthEntry_str.length - 1)
-      if(belongs(nodeVal, n, fingerIthEntry_int)){
-        finger_table(i) = "akka://actor-system/user/server_actor_"+nodeVal
-        val predObj = context.system.actorSelection(predecessor)
-        predObj ! updateTable(nodeVal, i)
+    case updateTable(predecessorValue:Int, nodeIndex: Int, i: Int) =>
+      /*val fingerIthEntry_str: String = finger_table(i)
+      val fingerIthEntry_int: Int = fingerIthEntry_str.charAt(fingerIthEntry_str.length - 1)*/
+      if(belongs(nodeIndex, predecessorValue, finger_table(i))){
+        finger_table(i) = nodeIndex
+        val predObj = predecessor
+        predObj ! updateTable(predObj, nodeIndex, i)
       }
 
 
@@ -99,15 +99,15 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
 }
 
 object ServerActor {
-  case class initializeFingerTable(hash: String, path: String)
+  case class initializeFingerTable(hash: String, nodeIndex: Int)
   case class initializeFirstFingerTable(hash: String)
   case class updateFingerTable()
   case class getData(id: Int)
   case class loadData(data: EntityDefinition)
   case class findSuccessor(start: Int)
-  case class getPredecessor()
-  case class updatePredecessor(nodePath: String)
+  case class getPredecessor(nodeIndex: Int)
+  case class updatePredecessor(nodeIndex: Int)
   case class updateOthers(nodeVal: Int)
-  case class updateTable(nodeVal: Int, i: Int)
+  case class updateTable(predecessorValue: Int, nodeVal: Int, i: Int)
 
 }

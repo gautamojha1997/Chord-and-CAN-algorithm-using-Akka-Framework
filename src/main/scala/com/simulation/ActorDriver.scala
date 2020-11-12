@@ -38,7 +38,7 @@ class ActorDriver {
 
   def createServerNode(): Unit = {
     if(numNodes > serverActorCount) {
-      serverActor ? createServerActor(serverActorCount)
+      serverActor ? createServerActor()
       serverActorCount += 1
     }
   }

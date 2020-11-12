@@ -12,6 +12,7 @@ import com.simulation.actors.users.UserActor.loadData
 import com.simulation.beans.EntityDefinition
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
@@ -20,22 +21,22 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
   //var nodes: mutable.Map[Int, String] = scala.collection.mutable.TreeMap[Int, String]()
   var nodes: mutable.Map[String, Int] = scala.collection.mutable.HashMap[String, Int]()
-  var set: mutable.TreeSet[Int] = scala.collection.mutable.TreeSet[Int]()
   val system: ActorSystem = ActorSystem()
   val timeout = Timeout(10 seconds)
   var hash:String = _
+  val nodeList = ListBuffer.range(0,numNodes)
 
 
   override def receive: Receive = {
 
-    case createServerActor(nodeCounter) => {
-      val serverActor = system.actorOf(Props(new ServerActor(nodeCounter, numNodes)), "server_actor_" + nodeCounter)
-      hash = md5(nodeCounter.toString, numNodes).mkString(",")
-      //nodeCounter += 1
+    case createServerActor() => {
+      val nodeIndex = nodeList(Random.nextInt(nodeList.size))
+      val serverActor = system.actorOf(Props(new ServerActor(nodeIndex, numNodes)), "server_actor_" + nodeIndex)
+      hash = md5(nodeIndex.toString, numNodes).mkString(",")
       if(nodes.nonEmpty){
 
-        serverActor ! initializeFingerTable(hash, "akka://actor-system/user/server_actor_"+Random.between(0, set.size))
-        serverActor ! updateOthers(nodeCounter)
+        serverActor ! initializeFingerTable(hash, nodeIndex)
+        serverActor ! updateOthers(nodeIndex)
 
         /*for ((k,v) <- nodes) {
           val serverActor = context.system.actorSelection("akka://actor-system/user/server_actor_"+k)
@@ -45,8 +46,8 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
       else
         serverActor ! initializeFirstFingerTable(hash)
 
-      nodes += (serverActor.path.toString -> nodeCounter)
-      set += nodeCounter
+      nodes += (serverActor.path.toString -> nodeIndex)
+      nodeList -= nodeIndex
     }
 
     case getData(id) => {
@@ -70,7 +71,7 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 }
 
 object SupervisorActor {
-  case class createServerActor(serverActorCount : Int)
+  case class createServerActor()
   case class getData(id: Int)
   case class loadData(data: EntityDefinition)
 }

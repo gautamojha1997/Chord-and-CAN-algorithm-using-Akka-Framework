@@ -11,7 +11,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
-  val timeout = Timeout(10 seconds)
+  val timeout = Timeout(5 seconds)
   override def receive: Receive = {
     case loadData(data) =>
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
@@ -27,6 +27,7 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
 
     case createUserActor(id) =>
       val userActor = context.actorOf(Props(new UserActor(id, actorSystem)), "" + id)
+      sender() ! userActor.path
 
   }
 }
