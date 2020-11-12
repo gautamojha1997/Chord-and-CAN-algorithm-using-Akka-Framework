@@ -48,7 +48,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       predecessor = nodeIndex
 
     case initializeFingerTable(hash: String, nodeIndex: Int) =>
-
+      node = nodeIndex
       val firstKey = ((hash.toInt + math.pow(2, 0)) % math.pow(2, buckets)).toInt
       val arbitraryNode = context.system.actorSelection(SERVER_ACTOR_PATH + nodeIndex)
       val successorValue = arbitraryNode ? findSuccessor(firstKey)
@@ -102,15 +102,20 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     var arbitraryNode =  node
     val arbitraryNodeActor = context.system.actorSelection(SERVER_ACTOR_PATH + node)
     while(!belongs(id, arbitraryNode , getImmediateSuccessor(arbitraryNodeActor))){
-      arbitraryNode = arbitraryNodeActor ? closest_preceding_finger(id)
+      val arbitraryNodeFinger = arbitraryNodeActor ? closest_preceding_finger(id)
+      arbitraryNode = Await.result(arbitraryNodeFinger, timeout.duration).toString.toInt
     }
     arbitraryNode
   }
 
   def closest_preceding_finger(id: Int): Int = {
     val m = (Math.log(numNodes)/Math.log(2)).toInt
-    for (i <- (1 to m).reverse) {}
-    n
+    for (i <- (1 to m).reverse) {
+      if(belongs( finger_table(i), node, id)){
+        return finger_table(i)
+      }
+    }
+    node
   }
 
 }
