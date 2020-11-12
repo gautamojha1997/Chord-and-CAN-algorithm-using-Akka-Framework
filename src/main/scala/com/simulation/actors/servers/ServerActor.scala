@@ -1,5 +1,5 @@
 package com.simulation.actors.servers
-import akka.actor.Actor
+import akka.actor.{Actor, ActorSelection}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
@@ -18,7 +18,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   val timeout = Timeout(10 seconds)
   val buckets = (Math.log(numNodes)/Math.log(2.0)).toInt
   val SERVER_ACTOR_PATH = "akka://actor-system/user/server_actor_"
-  val nodeVal :Int
+  var node: Int = _
 
   // Check if s belongs from n to fingerIthEntry
   def belongs(s:Int, n: Int, fingerIthEntry_int: Int): Boolean = {
@@ -87,28 +87,28 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   }
 
 
-  def getImmediateSuccessor(arbitraryNode: Int) : Int = {
-    // findSuccessor logic
-    val successorActor = context.system.actorSelection(SERVER_ACTOR_PATH + finger_table(arbitraryNode))
+  def getImmediateSuccessor(successorActor: ActorSelection) : Int = {
     val successorNode = successorActor ? finger_table(0)
     Await.result(successorNode, timeout.duration).toString.toInt
   }
 
   def findSuccessor(id: Int) :Int = {
     val arbitraryNode :Int = findPredecessor(id)
-    getImmediateSuccessor(arbitraryNode)
+    val successorActor = context.system.actorSelection(SERVER_ACTOR_PATH + finger_table(arbitraryNode))
+    getImmediateSuccessor(successorActor)
   }
 
   def findPredecessor(id: Int): Int ={
-    var arbitraryNode = nodeVal
-    while(!(id > arbitraryNode && id < findSuccessor(arbitraryNode))){
-      arbitraryNode = closest_preceding_finger(arbitraryNode, id)
+    var arbitraryNode =  node
+    val arbitraryNodeActor = context.system.actorSelection(SERVER_ACTOR_PATH + node)
+    while(!belongs(id, arbitraryNode , getImmediateSuccessor(arbitraryNodeActor))){
+      arbitraryNode = arbitraryNodeActor ? closest_preceding_finger(id)
     }
     arbitraryNode
   }
 
-  def closest_preceding_finger(n: Int, id: Int): Int = {
-    val m =4
+  def closest_preceding_finger(id: Int): Int = {
+    val m = (Math.log(numNodes)/Math.log(2)).toInt
     for (i <- (1 to m).reverse) {}
     n
   }
