@@ -7,6 +7,7 @@ import com.simulation.actors.servers.ServerActor.{findSuccessor, initializeFinge
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.FingerEntry
 
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
@@ -21,20 +22,17 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   var node: Int = _
 
   // Check if s belongs from n to fingerIthEntry
-  def belongs(s:Int, n: Int, fingerIthEntry_int: Int): Boolean = {
-    if(n > fingerIthEntry_int){
-      (n until numNodes).foreach{
-        i => if(i == s) return true
+  def belongs(s:Int, n: Int, successorValue: Int): Boolean = {
+    val nodeRanges:ListBuffer[Int] = if(n > successorValue){
+      //check if inclusive
+      val temp = ListBuffer.range(n,numNodes)
+      temp.addAll(ListBuffer.range(0,successorValue))
+    } else{
+        val temp = ListBuffer.range(successorValue,n)
+        temp
       }
-      (0 until fingerIthEntry_int).foreach{
-        i => if(i == s) return true
-      }
-    }
-    else{
-      (n until fingerIthEntry_int).foreach{
-        i => if(i == s) return true
-      }
-    }
+    if(nodeRanges.contains(s))
+      return true
     false
   }
 
@@ -77,8 +75,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       // nodeIndex -> s
       // i -> i
     case updateTable(predecessorValue:Int, nodeIndex: Int, i: Int) =>
-      /*val fingerIthEntry_str: String = finger_table(i)
-      val fingerIthEntry_int: Int = fingerIthEntry_str.charAt(fingerIthEntry_str.length - 1)*/
       if(belongs(nodeIndex, predecessorValue, finger_table(i))){
         finger_table(i) = nodeIndex
         val predObj = context.system.actorSelection(SERVER_ACTOR_PATH + predecessor)
@@ -87,7 +83,9 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   }
 
 
-  def getImmediateSuccessor(successorActor: ActorSelection) : Int = {
+  def getImmediateSuccessor(arbitraryNode: Int) : Int = {
+    // findSuccessor logic
+    val successorActor = context.system.actorSelection(SERVER_ACTOR_PATH + finger_table(arbitraryNode))
     val successorNode = successorActor ? finger_table(0)
     Await.result(successorNode, timeout.duration).toString.toInt
   }

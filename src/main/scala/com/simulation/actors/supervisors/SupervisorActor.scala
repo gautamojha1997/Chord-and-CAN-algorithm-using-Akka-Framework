@@ -4,7 +4,6 @@ import java.security.MessageDigest
 
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
-import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor
 import com.simulation.actors.servers.ServerActor.{initializeFingerTable, initializeFirstFingerTable, updateFingerTable, updateOthers}
@@ -22,10 +21,10 @@ import scala.language.postfixOps
 
 class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
-  //var nodes: mutable.Map[Int, String] = scala.collection.mutable.TreeMap[Int, String]()
   var nodes: mutable.Map[String, Int] = scala.collection.mutable.HashMap[String, Int]()
   val system: ActorSystem = ActorSystem()
   val timeout = Timeout(10 seconds)
+  //check if inclusive
   val nodeList = ListBuffer.range(0,numNodes)
 
 
