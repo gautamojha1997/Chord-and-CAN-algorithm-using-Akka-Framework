@@ -4,6 +4,7 @@ import java.security.MessageDigest
 
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
+import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor
 import com.simulation.actors.servers.ServerActor.{initializeFingerTable, initializeFirstFingerTable, updateFingerTable, updateOthers}
@@ -16,6 +17,8 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
+import scala.language.postfixOps
+
 
 class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
@@ -23,7 +26,6 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
   var nodes: mutable.Map[String, Int] = scala.collection.mutable.HashMap[String, Int]()
   val system: ActorSystem = ActorSystem()
   val timeout = Timeout(10 seconds)
-  var hash:String = _
   val nodeList = ListBuffer.range(0,numNodes)
 
 
@@ -32,7 +34,7 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
     case createServerActor() => {
       val nodeIndex = nodeList(Random.nextInt(nodeList.size))
       val serverActor = system.actorOf(Props(new ServerActor(nodeIndex, numNodes)), "server_actor_" + nodeIndex)
-      hash = md5(nodeIndex.toString, numNodes).mkString(",")
+      val hash = md5(nodeIndex.toString, numNodes).mkString(",")
       if(nodes.nonEmpty){
 
         serverActor ! initializeFingerTable(hash, nodeIndex)
@@ -74,6 +76,7 @@ object SupervisorActor {
   case class createServerActor()
   case class getData(id: Int)
   case class loadData(data: EntityDefinition)
+  case class getSnapshot()
 }
 
 
