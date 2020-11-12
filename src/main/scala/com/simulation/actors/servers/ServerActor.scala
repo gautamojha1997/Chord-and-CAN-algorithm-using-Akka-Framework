@@ -3,7 +3,7 @@ import akka.actor.{Actor, ActorSelection}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
-import com.simulation.actors.servers.ServerActor.{findSuccessor, initializeFingerTable, initializeFirstFingerTable, updateOthers, updatePredecessor, updateTable}
+import com.simulation.actors.servers.ServerActor.{findSuccessor, getData, initializeFingerTable, initializeFirstFingerTable, loadData, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.FingerEntry
 
@@ -13,13 +13,14 @@ import scala.concurrent.duration.DurationInt
 
 class ServerActor(id: Int, numNodes: Int) extends Actor {
 
-  var dht = scala.collection.mutable.HashMap[Int, Int]()
+  var dht = scala.collection.mutable.HashMap[Int, String]()
   var finger_table = scala.collection.mutable.LinkedHashMap[Int, Int]()
   var predecessor: Int = _
   val timeout = Timeout(10 seconds)
   val buckets = (Math.log(numNodes)/Math.log(2.0)).toInt
   val SERVER_ACTOR_PATH = "akka://actor-system/user/server_actor_"
   var node: Int = _
+  val m = (Math.log(numNodes)/Math.log(2)).toInt
 
   // Check if s belongs from n to fingerIthEntry
   def belongs(s:Int, n: Int, successorValue: Int): Boolean = {
@@ -80,12 +81,20 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
         val predObj = context.system.actorSelection(SERVER_ACTOR_PATH + predecessor)
         predObj ! updateTable(predecessor, nodeIndex, i)
       }
+
+    case loadData(data: EntityDefinition) =>
+      dht += (data.id -> data.stockName)
+
+    case getData(id: Int) =>
+
   }
 
 
-  def getImmediateSuccessor(arbitraryNode: Int) : Int = {
+  def getImmediateSuccessor(arbitraryNode: ActorSelection) : Int = {
     // findSuccessor logic
-    val successorActor = context.system.actorSelection(SERVER_ACTOR_PATH + finger_table(arbitraryNode))
+    val fingerNode = arbitraryNode ? node
+    val fingerValue = Await.result(fingerNode, timeout.duration).toString.toInt
+    val successorActor = context.system.actorSelection(SERVER_ACTOR_PATH + finger_table(fingerValue))
     val successorNode = successorActor ? finger_table(0)
     Await.result(successorNode, timeout.duration).toString.toInt
   }
@@ -107,7 +116,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   }
 
   def closest_preceding_finger(id: Int): Int = {
-    val m = (Math.log(numNodes)/Math.log(2)).toInt
     for (i <- (1 to m).reverse) {
       if(belongs( finger_table(i), node, id)){
         return finger_table(i)

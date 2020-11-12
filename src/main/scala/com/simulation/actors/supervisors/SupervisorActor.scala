@@ -60,7 +60,8 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
     // implement hashing function & load the data in appropriate node
     case loadData(data) => {
-      val hashKey = md5(data.id.toString)
+      val serverActor = context.system.actorSelection("akka://actor-system/user/server_actor_"+Random.nextInt(nodeList.size))
+      serverActor ! loadData(data)
     }
   }
 
