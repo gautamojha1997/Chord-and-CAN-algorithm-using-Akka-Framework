@@ -6,6 +6,7 @@ import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor.{findSuccessor, getData, initializeFingerTable, initializeFirstFingerTable, loadData, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.ApplicationConstants
+import com.simulation.utils.Utility
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -85,8 +86,11 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     case loadData(data: EntityDefinition) =>
       dht += (data.id -> data.stockName)
 
-    case getData() =>
-      dht
+    case getData(id: Int) =>
+      val nodeIndex = Utility.md5(id.toString, numNodes)
+      for((start, successor) <- finger_table) {
+
+      }
   }
 
 
@@ -130,7 +134,7 @@ object ServerActor {
   case class initializeFingerTable(nodeIndex: Int)
   case class initializeFirstFingerTable(nodeIndex: Int)
   case class updateFingerTable()
-  case class getData()
+  case class getData(id: Int)
   case class loadData(data: EntityDefinition)
   case class findSuccessor(index: Int)
   case class updatePredecessor(nodeIndex: Int)

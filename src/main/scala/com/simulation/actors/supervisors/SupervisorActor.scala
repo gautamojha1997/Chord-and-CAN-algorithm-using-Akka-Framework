@@ -9,7 +9,7 @@ import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, get
 import com.simulation.actors.users.UserActor.loadData
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.ApplicationConstants
-
+import com.simulation.utils.Utility
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -51,8 +51,7 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
     }
 
     case getData(id) => {
-      val nodeIndex = nodesActorMapper.get(id)
-      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
+      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + 0)
       val data = serverActor ? getData(id)
       val result = Await.result(data, timeout.duration)
       sender() ! result
@@ -62,15 +61,8 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
     case loadData(data) => {
       val nodeIndex = activeNodes.toVector(Random.nextInt(activeNodes.size))
       val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
-      nodesActorMapper += (data.id -> nodeIndex)
       serverActor ! loadData(data)
     }
-  }
-
-  def md5(s: String, bitsNumber: Int): String = {
-    val md = java.security.MessageDigest.getInstance("MD5").digest(s.getBytes("UTF-8")).map("%02x".format(_)).mkString
-    val bin = BigInt(md, 16).toString(2).take(bitsNumber)
-    Integer.parseInt(bin, 2).toString
   }
 }
 
