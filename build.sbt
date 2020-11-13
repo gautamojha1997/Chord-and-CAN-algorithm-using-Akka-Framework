@@ -28,12 +28,6 @@ libraryDependencies ++= Seq(
 
   "ch.qos.logback"    % "logback-classic" % "1.2.3",
 
-  "org.ddahl" %% "rscala" % "3.2.19",
-
-//  "com.datastax.cassandra" % "cassandra-driver-core" % "3.6.0",
-//
-//  "com.typesafe.akka" %% "akka-http" % "10.1.7",
-//
-//  "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.7",
+  "org.ddahl" %% "rscala" % "3.2.19"
 
 )

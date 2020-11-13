@@ -15,6 +15,7 @@ import org.ddahl.rscala.RClient
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.util.Random
 
 object ActorDriver {
 
@@ -32,7 +33,7 @@ object ActorDriver {
   List.tabulate(numUsers)(i => userActor ! createUserActor(i))
 
   var serverActorCount = 0
-  val RClientObj = RClient()
+ // val RClientObj = RClient()
 
   val timeout = Timeout(10 seconds)
 
@@ -46,13 +47,15 @@ object ActorDriver {
   }
 
   def loadData(id: Int): Unit = {
-    val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
+   // val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
+    val userActorId = Random.nextInt(numUsers)
     val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
     dataHandlerActor ! loadData(id)
   }
 
   def getData(id: Int): Any = {
-    val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
+    //val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
+    val userActorId = Random.nextInt(numUsers)
     val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
     val dataRetrieved = dataHandlerActor ? getData(id)
     val result = Await.result(dataRetrieved, timeout.duration)
