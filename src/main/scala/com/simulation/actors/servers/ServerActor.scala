@@ -38,16 +38,17 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
 
   override def receive = {
 
-    case initializeFirstFingerTable(hash: String) =>
-      List.tabulate(buckets)(x => finger_table += (((hash.toInt + math.pow(2, x)) % math.pow(2, buckets)).toInt -> hash.toInt))
-      predecessor = hash.toInt
+    case initializeFirstFingerTable(nodeIndex: Int) =>
+      List.tabulate(buckets)(x => finger_table +=
+        (((nodeIndex + math.pow(2, x)) % math.pow(2, buckets)).toInt -> nodeIndex))
+      predecessor = nodeIndex
 
     case updatePredecessor(nodeIndex: Int) =>
       predecessor = nodeIndex
 
-    case initializeFingerTable(hash: String, nodeIndex: Int) =>
+    case initializeFingerTable(nodeIndex: Int) =>
       node = nodeIndex
-      val firstKey = ((hash.toInt + math.pow(2, 0)) % math.pow(2, buckets)).toInt
+      val firstKey = ((nodeIndex + math.pow(2, 0)) % math.pow(2, buckets)).toInt
       val arbitraryNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
       val successorValue = arbitraryNode ? findSuccessor(firstKey)
       val firstVal = Await.result(successorValue, timeout.duration).toString.toInt
@@ -58,7 +59,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       successor ! updatePredecessor(nodeIndex)
 
       List.tabulate(numNodes) ({ x =>
-        val key = ((hash.toInt + math.pow(2, x + 1)) % math.pow(2, buckets)).toInt
+        val key = ((nodeIndex + math.pow(2, x + 1)) % math.pow(2, buckets)).toInt
         val successorValue = arbitraryNode ? findSuccessor(key)
         val Val = Await.result(successorValue, timeout.duration).toString.toInt
         finger_table += (key -> Val)
@@ -126,8 +127,8 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
 }
 
 object ServerActor {
-  case class initializeFingerTable(hash: String, nodeIndex: Int)
-  case class initializeFirstFingerTable(hash: String)
+  case class initializeFingerTable(nodeIndex: Int)
+  case class initializeFirstFingerTable(nodeIndex: Int)
   case class updateFingerTable()
   case class getData()
   case class loadData(data: EntityDefinition)
