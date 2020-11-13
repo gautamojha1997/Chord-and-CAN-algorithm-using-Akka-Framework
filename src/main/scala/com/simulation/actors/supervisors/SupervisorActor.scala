@@ -1,15 +1,17 @@
 package com.simulation.actors.supervisors
+
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor
-import com.simulation.actors.servers.ServerActor.{initializeFingerTable, initializeFirstFingerTable, updateFingerTable, updateOthers}
+import com.simulation.actors.servers.ServerActor.{initializeFingerTable, initializeFirstFingerTable, updateOthers}
 import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getData}
 import com.simulation.actors.users.UserActor.loadData
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.ApplicationConstants
-import com.simulation.utils.Utility
+import com.simulation.utils.Utility.md5
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -59,8 +61,8 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
     // implement hashing function & load the data in appropriate node
     case loadData(data) => {
-      val nodeIndex = activeNodes.toVector(Random.nextInt(activeNodes.size))
-      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
+      val hash = md5(data.id.toString, numNodes)
+      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.maxBefore(hash))
       serverActor ! loadData(data)
     }
   }
