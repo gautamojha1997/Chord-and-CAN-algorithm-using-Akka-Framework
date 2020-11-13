@@ -6,7 +6,7 @@ import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.ApplicationConstants
-import com.simulation.utils.Utility
+import scala.language.postfixOps
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
