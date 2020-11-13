@@ -32,9 +32,14 @@ object WebService {
 
           path("addNode"){
             val result = ActorDriver.createServerNode()
+            if(result)
             complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
               "Node added"
             ))
+            else
+              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                "Cant Add"
+              ))
           },
 
           path("snapshot"){
