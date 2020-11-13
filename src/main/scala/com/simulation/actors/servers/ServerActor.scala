@@ -3,7 +3,7 @@ import akka.actor.{Actor, ActorSelection}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
-import com.simulation.actors.servers.ServerActor.{findSuccessor, getData, initializeFingerTable, initializeFirstFingerTable, loadData, updateOthers, updatePredecessor, updateTable}
+import com.simulation.actors.servers.ServerActor.{findSuccessor, getData, getSnapshot, initializeFingerTable, initializeFirstFingerTable, loadData, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.ApplicationConstants
 import com.simulation.utils.Utility
@@ -89,8 +89,10 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     case getData(id: Int) =>
       val nodeIndex = Utility.md5(id.toString, numNodes)
       for((start, successor) <- finger_table) {
-
       }
+
+    case getSnapshot() =>
+      finger_table
   }
 
 
@@ -140,5 +142,6 @@ object ServerActor {
   case class updatePredecessor(nodeIndex: Int)
   case class updateOthers(nodeVal: Int)
   case class updateTable(predecessorValue: Int, nodeVal: Int, i: Int)
+  case class getSnapshot()
 
 }

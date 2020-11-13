@@ -6,7 +6,7 @@ import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor
 import com.simulation.actors.servers.ServerActor.{initializeFingerTable, initializeFirstFingerTable, updateOthers}
-import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getData}
+import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getData, getSnapshot}
 import com.simulation.actors.users.UserActor.loadData
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.ApplicationConstants
@@ -65,7 +65,15 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
       val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.maxBefore(hash))
       serverActor ! loadData(data)
     }
-  }
+
+    case getSnapshot() =>
+      activeNodes.map( server  => {
+        val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + server)
+        val snapshot = serverActor ? getSnapshot
+        val result = Await.result(snapshot, timeout.duration)
+        sender() ! result
+        })
+    }
 }
 
 object SupervisorActor {
