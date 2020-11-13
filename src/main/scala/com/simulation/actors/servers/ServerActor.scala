@@ -5,7 +5,7 @@ import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor.{findSuccessor, getData, initializeFingerTable, initializeFirstFingerTable, loadData, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
-import com.simulation.utils.FingerEntry
+import com.simulation.utils.ApplicationConstants
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -18,7 +18,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   var predecessor: Int = _
   val timeout = Timeout(10 seconds)
   val buckets = (Math.log(numNodes)/Math.log(2.0)).toInt
-  val SERVER_ACTOR_PATH = "akka://actor-system/user/server_actor_"
   var node: Int = _
   val m = (Math.log(numNodes)/Math.log(2)).toInt
 
@@ -49,11 +48,11 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     case initializeFingerTable(hash: String, nodeIndex: Int) =>
       node = nodeIndex
       val firstKey = ((hash.toInt + math.pow(2, 0)) % math.pow(2, buckets)).toInt
-      val arbitraryNode = context.system.actorSelection(SERVER_ACTOR_PATH + nodeIndex)
+      val arbitraryNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
       val successorValue = arbitraryNode ? findSuccessor(firstKey)
       val firstVal = Await.result(successorValue, timeout.duration).toString.toInt
       finger_table += (firstKey -> firstVal)
-      val successor = context.system.actorSelection(SERVER_ACTOR_PATH + finger_table(0))
+      val successor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + finger_table(0))
       // check for successor or cuurent node
 //      val futurePredecessor = findPredecessor(nodeIndex)
       successor ! updatePredecessor(nodeIndex)
@@ -68,7 +67,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     case updateOthers(nodeIndex: Int) =>
       List.tabulate(buckets)(i => {
           val predecessorValue = findPredecessor((nodeIndex - math.pow(2, i)).toInt)
-          val predecessorObject = context.system.actorSelection(SERVER_ACTOR_PATH + predecessorValue)
+          val predecessorObject = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + predecessorValue)
           predecessorObject ! updateTable(predecessorValue, nodeIndex, i)
         })
 
@@ -78,15 +77,15 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     case updateTable(predecessorValue:Int, nodeIndex: Int, i: Int) =>
       if(belongs(nodeIndex, predecessorValue, finger_table(i))){
         finger_table(i) = nodeIndex
-        val predObj = context.system.actorSelection(SERVER_ACTOR_PATH + predecessor)
+        val predObj = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + predecessor)
         predObj ! updateTable(predecessor, nodeIndex, i)
       }
 
     case loadData(data: EntityDefinition) =>
       dht += (data.id -> data.stockName)
 
-    case getData(id: Int) =>
-
+    case getData() =>
+      dht
   }
 
 
@@ -94,20 +93,20 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     // findSuccessor logic
     val fingerNode = arbitraryNode ? node
     val fingerValue = Await.result(fingerNode, timeout.duration).toString.toInt
-    val successorActor = context.system.actorSelection(SERVER_ACTOR_PATH + finger_table(fingerValue))
+    val successorActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + finger_table(fingerValue))
     val successorNode = successorActor ? finger_table(0)
     Await.result(successorNode, timeout.duration).toString.toInt
   }
 
   def findSuccessor(id: Int) :Int = {
     val arbitraryNode :Int = findPredecessor(id)
-    val successorActor = context.system.actorSelection(SERVER_ACTOR_PATH + finger_table(arbitraryNode))
+    val successorActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + finger_table(arbitraryNode))
     getImmediateSuccessor(successorActor)
   }
 
   def findPredecessor(id: Int): Int ={
     var arbitraryNode =  node
-    val arbitraryNodeActor = context.system.actorSelection(SERVER_ACTOR_PATH + node)
+    val arbitraryNodeActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + node)
     while(!belongs(id, arbitraryNode , getImmediateSuccessor(arbitraryNodeActor))){
       val arbitraryNodeFinger = arbitraryNodeActor ? closest_preceding_finger(id)
       arbitraryNode = Await.result(arbitraryNodeFinger, timeout.duration).toString.toInt
@@ -130,7 +129,7 @@ object ServerActor {
   case class initializeFingerTable(hash: String, nodeIndex: Int)
   case class initializeFirstFingerTable(hash: String)
   case class updateFingerTable()
-  case class getData(id: Int)
+  case class getData()
   case class loadData(data: EntityDefinition)
   case class findSuccessor(index: Int)
   case class updatePredecessor(nodeIndex: Int)

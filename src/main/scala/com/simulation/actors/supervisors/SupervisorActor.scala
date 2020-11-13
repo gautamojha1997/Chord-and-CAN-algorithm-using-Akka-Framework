@@ -1,6 +1,5 @@
 package com.simulation.actors.supervisors
 import akka.actor.{Actor, ActorSystem, Props}
-import java.security.MessageDigest
 
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
@@ -10,6 +9,7 @@ import com.simulation.actors.servers.ServerActor.{initializeFingerTable, initial
 import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getData}
 import com.simulation.actors.users.UserActor.loadData
 import com.simulation.beans.EntityDefinition
+import com.simulation.utils.ApplicationConstants
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -21,20 +21,21 @@ import scala.language.postfixOps
 
 class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
-  var nodes: mutable.Map[String, Int] = scala.collection.mutable.HashMap[String, Int]()
+  var nodesActorMapper: mutable.Map[Int, Int] = scala.collection.mutable.HashMap[String, Int]()
   val system: ActorSystem = ActorSystem()
   val timeout = Timeout(10 seconds)
   //check if inclusive
-  val nodeList = ListBuffer.range(0,numNodes)
+  val unexploredNodes = ListBuffer.range(0,numNodes)
+  var visitedNodes: ListBuffer[Int] = _
 
 
   override def receive: Receive = {
 
     case createServerActor() => {
-      val nodeIndex = nodeList(Random.nextInt(nodeList.size))
+      val nodeIndex = unexploredNodes(Random.nextInt(unexploredNodes.size))
       val serverActor = system.actorOf(Props(new ServerActor(nodeIndex, numNodes)), "server_actor_" + nodeIndex)
       val hash = md5(nodeIndex.toString, numNodes).mkString(",")
-      if(nodes.nonEmpty){
+      if(visitedNodes.nonEmpty){
 
         serverActor ! initializeFingerTable(hash, nodeIndex)
         serverActor ! updateOthers(nodeIndex)
@@ -47,20 +48,24 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
       else
         serverActor ! initializeFirstFingerTable(hash)
 
-      nodes += (serverActor.path.toString -> nodeIndex)
-      nodeList -= nodeIndex
+      unexploredNodes -= nodeIndex
+      visitedNodes += nodeIndex
     }
 
     case getData(id) => {
-      val serverActor = context.system.actorSelection("akka://actor-system/user/server_actor_0")
-      val data = serverActor ? getData(id)
+      val nodeIndex = nodesActorMapper.get(id)
+      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
+      val data = serverActor ? getData()
       val result = Await.result(data, timeout.duration)
       sender() ! result
     }
 
     // implement hashing function & load the data in appropriate node
     case loadData(data) => {
-      val serverActor = context.system.actorSelection("akka://actor-system/user/server_actor_"+Random.nextInt(nodeList.size))
+      val nodeIndex = visitedNodes(Random.nextInt(visitedNodes.size))
+      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
+      nodesActorMapper += (data.id -> nodeIndex)
+      visitedNodes -= nodeIndex
       serverActor ! loadData(data)
     }
   }
