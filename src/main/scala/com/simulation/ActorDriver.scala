@@ -16,7 +16,7 @@ import org.ddahl.rscala.RClient
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
-class ActorDriver {
+object ActorDriver {
 
   private val conf = ConfigFactory.load("application.conf")
 

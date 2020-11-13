@@ -14,7 +14,6 @@ import scala.io.StdIn
 object WebService {
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem(Behaviors.empty, "my-system")
-    // needed for the future flatMap/onComplete in the end
     implicit val executionContext = system.executionContext
 
     val route =
@@ -30,12 +29,14 @@ object WebService {
           },
 
           path("addNode"){
+            val result = ActorDriver.createServerNode()
             complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
               "Node added"
             ))
           },
 
           path("snapshot"){
+            val result = ActorDriver.printSnapshot()
             complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
               "Snapshot created"
             ))
@@ -44,6 +45,7 @@ object WebService {
           path("load"){
             parameters("id"){
               (id) =>
+                ActorDriver.loadData(id.toInt)
                 complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
                   "Added: " + id
                 ))
@@ -65,10 +67,10 @@ object WebService {
     val bindingFuture = Http().newServerAt("localhost", 8080).bind(route)
 
     println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
-    StdIn.readLine() // let it run until user presses return
+    StdIn.readLine()
     bindingFuture
-      .flatMap(_.unbind()) // trigger unbinding from the port
-      .onComplete(_ => system.terminate()) // and shutdown when done
+      .flatMap(_.unbind())
+      .onComplete(_ => system.terminate())
   }
 
 }

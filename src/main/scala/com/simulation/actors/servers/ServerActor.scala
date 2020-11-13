@@ -3,7 +3,7 @@ import akka.actor.{Actor, ActorSelection}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
-import com.simulation.actors.servers.ServerActor.{findSuccessor, getData, getSnapshot, initializeFingerTable, initializeFirstFingerTable, loadData, updateOthers, updatePredecessor, updateTable}
+import com.simulation.actors.servers.ServerActor.{getData, getSnapshot, initializeFingerTable, initializeFirstFingerTable, loadData, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.ApplicationConstants
 import com.simulation.utils.Utility
@@ -11,6 +11,7 @@ import com.simulation.utils.Utility
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
 
 class ServerActor(id: Int, numNodes: Int) extends Actor {
 
