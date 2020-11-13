@@ -3,7 +3,7 @@ import akka.actor.{Actor, ActorSelection}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
-import com.simulation.actors.servers.ServerActor.{getData, getSnapshot, initializeFingerTable, initializeFirstFingerTable, loadData, updateOthers, updatePredecessor, updateTable}
+import com.simulation.actors.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.ApplicationConstants
 import com.simulation.utils.Utility
@@ -11,7 +11,6 @@ import com.simulation.utils.Utility
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import scala.language.postfixOps
 
 class ServerActor(id: Int, numNodes: Int) extends Actor {
 
@@ -84,15 +83,28 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
         predObj ! updateTable(predecessor, nodeIndex, i)
       }
 
-    case loadData(data: EntityDefinition) =>
+    case loadDataServer(data: EntityDefinition) =>
       dht += (data.id -> data.stockName)
 
-    case getData(id: Int) =>
-      val nodeIndex = Utility.md5(id.toString, numNodes)
-      for((start, successor) <- finger_table) {
+    case getDataServer(nodeIndex: Int, m: Int) =>
+      if(m == buckets){
+        val fingerTBuffer = finger_table.toSeq
+        List.tabulate(fingerTBuffer.size)(i=>
+        if(belongs(nodeIndex, fingerTBuffer(i)._1, fingerTBuffer((i+1)%fingerTBuffer.size)._1)){
+          if(fingerTBuffer(i)._2 != nodeIndex) {
+            val successorNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH +
+              fingerTBuffer(i)._2)
+            successorNode ! getDataServer(id, m + 1)
+          }
+          else {
+            val stockName = dht.get(nodeIndex)
+            sender() ! nodeIndex + " " + stockName
+          }
+        })
       }
+      sender() ! ""
 
-    case getSnapshot() =>
+    case getSnapshotServer() =>
       finger_table
   }
 
@@ -137,12 +149,12 @@ object ServerActor {
   case class initializeFingerTable(nodeIndex: Int)
   case class initializeFirstFingerTable(nodeIndex: Int)
   case class updateFingerTable()
-  case class getData(id: Int)
-  case class loadData(data: EntityDefinition)
+  case class getDataServer(nodeIndex: Int, m: Int)
+  case class loadDataServer(data: EntityDefinition)
   case class findSuccessor(index: Int)
   case class updatePredecessor(nodeIndex: Int)
   case class updateOthers(nodeVal: Int)
   case class updateTable(predecessorValue: Int, nodeVal: Int, i: Int)
-  case class getSnapshot()
+  case class getSnapshotServer()
 
 }

@@ -5,9 +5,8 @@ import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor
-import com.simulation.actors.servers.ServerActor.{initializeFingerTable, initializeFirstFingerTable, updateOthers}
-import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getData, getSnapshot}
-import com.simulation.actors.users.UserActor.loadData
+import com.simulation.actors.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable,loadDataServer, updateOthers}
+import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot, loadDataSupervisor}
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.ApplicationConstants
 import com.simulation.utils.Utility.md5
@@ -52,24 +51,24 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
       activeNodes += nodeIndex
     }
 
-    case getData(id) => {
+    case getDataSupervisor(id) => {
       val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + 0)
-      val data = serverActor ? getData(id)
+      val data = serverActor ? getDataServer(id,0)
       val result = Await.result(data, timeout.duration)
       sender() ! result
     }
 
     // implement hashing function & load the data in appropriate node
-    case loadData(data) => {
+    case loadDataSupervisor(data) => {
       val hash = md5(data.id.toString, numNodes)
       val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.maxBefore(hash))
-      serverActor ! loadData(data)
+      serverActor ! loadDataServer(data)
     }
 
     case getSnapshot() =>
       activeNodes.map( server  => {
         val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + server)
-        val snapshot = serverActor ? getSnapshot
+        val snapshot = serverActor ? getSnapshotServer
         val result = Await.result(snapshot, timeout.duration)
         sender() ! result
         })
@@ -78,8 +77,8 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
 object SupervisorActor {
   case class createServerActor()
-  case class getData(id: Int)
-  case class loadData(data: EntityDefinition)
+  case class getDataSupervisor(id: Int)
+  case class loadDataSupervisor(data: EntityDefinition)
   case class getSnapshot()
 }
 

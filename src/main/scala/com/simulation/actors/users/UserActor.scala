@@ -4,8 +4,10 @@ import akka.actor.{Actor, ActorSystem, Props}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
+import com.simulation.actors.supervisors.SupervisorActor.{getDataSupervisor, loadDataSupervisor}
 import com.simulation.actors.users.UserActor.{createUserActor, getData, loadData}
 import com.simulation.beans.EntityDefinition
+
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
@@ -15,13 +17,13 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
   override def receive: Receive = {
     case loadData(data) =>
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
-      val nextActor = supervisorActor ? loadData(data)
+      val nextActor = supervisorActor ? loadDataSupervisor(data)
       val result = Await.result(nextActor, timeout.duration)
       sender() ! result
 
     case getData(id) =>
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
-      val nextActor = supervisorActor ? getData(id)
+      val nextActor = supervisorActor ? getDataSupervisor(id)
       val result = Await.result(nextActor, timeout.duration)
       sender() ! result
 
