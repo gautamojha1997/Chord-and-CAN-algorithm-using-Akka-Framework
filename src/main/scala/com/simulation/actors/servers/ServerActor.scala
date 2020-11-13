@@ -105,7 +105,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       sender() ! ""
 
     case getSnapshotServer() =>
-      finger_table
+      sender() ! finger_table
   }
 
 
