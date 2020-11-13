@@ -11,6 +11,7 @@ import com.simulation.utils.Utility
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
 
 class ServerActor(id: Int, numNodes: Int) extends Actor {
 
@@ -105,7 +106,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       sender() ! ""
 
     case getSnapshotServer() =>
-      finger_table
+      sender() ! finger_table
   }
 
 
