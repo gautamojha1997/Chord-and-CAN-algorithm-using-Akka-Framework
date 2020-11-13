@@ -24,7 +24,9 @@ object WebService {
           path(""){
             complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
               "<p>To perform load and lookup, you need to search for http://localhost:8080/load?id=yourId and http://localhost:8080/lookup?id=yourId respectively </p>" +
-                "<form action=\"http://localhost:8080/addNode\">\n    <input type=\"submit\" value=\"Add node\" />\n</form>" +
+                "<form action=\"http://localhost:8080/addNode\">\n    <input type=\"submit\" value=\"Add Node\" />\n</form>" +
+                "<form action=\"http://localhost:8080/loadData\">\n    <input type=\"submit\" value=\"Load Data\" />\n</form>" +
+                "<form action=\"http://localhost:8080/lookup\">\n    <input type=\"submit\" value=\"Lookup Data\" />\n</form>" +
                 "<form action=\"http://localhost:8080/snapshot\">\n    <input type=\"submit\" value=\"Snapshot\" />\n</form>"))
           },
 
@@ -42,7 +44,7 @@ object WebService {
             ))
           },
 
-          path("load"){
+          path("loadData"){
             parameters("id"){
               (id) =>
                 ActorDriver.loadData(id.toInt)
@@ -55,7 +57,7 @@ object WebService {
           path("lookup"){
             parameters("id"){
               id =>
-                val result = ActorDriver.loadData(id.toInt)
+                ActorDriver.getData(id.toInt)
                 complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
                   "Lookup value: " + id
                 ))
