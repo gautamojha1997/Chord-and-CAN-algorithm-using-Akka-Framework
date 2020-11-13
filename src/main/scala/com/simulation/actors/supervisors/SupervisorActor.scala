@@ -26,7 +26,7 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
   val timeout = Timeout(10 seconds)
   //check if inclusive
   val unexploredNodes = ListBuffer.range(0,numNodes)
-  var activeNodes: mutable.TreeSet[Int] = _
+  var activeNodes: mutable.TreeSet[Int] = new mutable.TreeSet[Int]()
 
 
   override def receive: Receive = {
@@ -48,7 +48,8 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
         serverActor ! initializeFirstFingerTable(nodeIndex)
 
       unexploredNodes -= nodeIndex
-      activeNodes += nodeIndex
+      activeNodes.add(nodeIndex)
+      print(2)
     }
 
     case getDataSupervisor(id) => {

@@ -36,11 +36,13 @@ object ActorDriver {
 
   val timeout = Timeout(10 seconds)
 
-  def createServerNode(): Unit = {
+  def createServerNode(): Boolean = {
     if(numNodes > serverActorCount) {
-      serverActor ? createServerActor()
+      supervisorActor ? createServerActor()
       serverActorCount += 1
+      return true
     }
+    false
   }
 
   def loadData(id: Int): Unit = {
