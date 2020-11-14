@@ -7,6 +7,7 @@ import akka.util.Timeout
 import com.simulation.actors.supervisors.SupervisorActor.{getDataSupervisor, loadDataSupervisor}
 import com.simulation.actors.users.UserActor.{createUserActor, getData, loadData}
 import com.simulation.beans.EntityDefinition
+import com.simulation.utils.Data
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
@@ -15,6 +16,7 @@ import scala.language.postfixOps
 class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
   val timeout = Timeout(5 seconds)
   override def receive: Receive = {
+
     case loadData(data) =>
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
       val nextActor = supervisorActor ? loadDataSupervisor(data)
@@ -35,7 +37,7 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
 }
 
 object UserActor {
-  case class loadData(data:EntityDefinition)
+  case class loadData(data:Data)
   case class getData(id:Int)
   case class createUserActor(id:Int)
 //

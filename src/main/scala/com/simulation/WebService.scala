@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server.Directives.{complete, concat, get, parameters, path, pathSingleSlash, post, put}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.duration.DurationInt
 import scala.io.StdIn
@@ -15,6 +16,7 @@ object WebService {
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem(Behaviors.empty, "my-system")
     implicit val executionContext = system.executionContext
+    val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
     val route =
 
@@ -43,6 +45,7 @@ object WebService {
           },
 
           path("snapshot"){
+            logger.info("Snapshot Web Service")
             val result = ActorDriver.printSnapshot()
             complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
               "Snapshot created"
@@ -50,6 +53,7 @@ object WebService {
           },
 
           path("loadData"){
+            logger.info("In loadData webservice")
             parameters("id"){
               (id) =>
                 ActorDriver.loadData(id.toInt)

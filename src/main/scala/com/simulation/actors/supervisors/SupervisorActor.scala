@@ -5,11 +5,12 @@ import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor
-import com.simulation.actors.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable,loadDataServer, updateOthers}
+import com.simulation.actors.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers}
 import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot, loadDataSupervisor}
 import com.simulation.beans.EntityDefinition
-import com.simulation.utils.ApplicationConstants
+import com.simulation.utils.{ApplicationConstants, Data}
 import com.simulation.utils.Utility.md5
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -23,10 +24,11 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
   var nodesActorMapper: mutable.Map[Int, Int] = mutable.HashMap[Int, Int]()
   val system: ActorSystem = ActorSystem()
-  val timeout = Timeout(10 seconds)
+  val timeout = Timeout(30 seconds)
   //check if inclusive
   val unexploredNodes = ListBuffer.range(0,numNodes)
   var activeNodes: mutable.TreeSet[Int] = new mutable.TreeSet[Int]()
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
 
   override def receive: Receive = {
@@ -49,7 +51,8 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
       unexploredNodes -= nodeIndex
       activeNodes.add(nodeIndex)
-      print(2)
+      logger.info(activeNodes.toString)
+
     }
 
     case getDataSupervisor(id) => {
@@ -62,14 +65,19 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
     // implement hashing function & load the data in appropriate node
     case loadDataSupervisor(data) => {
       val hash = md5(data.id.toString, numNodes)
-      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.maxBefore(hash))
+      var chosenNode = activeNodes.minAfter(hash).toString
+      if(chosenNode == "None")
+        chosenNode = activeNodes.head.toString
+      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + chosenNode)
       serverActor ! loadDataServer(data)
     }
 
     case getSnapshot() =>
       activeNodes.map( server  => {
-        val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + server)
-        val snapshot = serverActor ? getSnapshotServer
+        logger.info("Get Snapshot")
+        val serverActor = context.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + server)
+        logger.info(serverActor.toString())
+        val snapshot = serverActor ? getSnapshotServer()
         val result = Await.result(snapshot, timeout.duration)
         sender() ! result
         })
@@ -79,7 +87,7 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 object SupervisorActor {
   case class createServerActor()
   case class getDataSupervisor(id: Int)
-  case class loadDataSupervisor(data: EntityDefinition)
+  case class loadDataSupervisor(data: Data)
   case class getSnapshot()
 }
 
