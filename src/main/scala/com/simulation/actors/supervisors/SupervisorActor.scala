@@ -28,7 +28,6 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
   val unexploredNodes = ListBuffer.range(0,numNodes)
   var activeNodes: mutable.TreeSet[Int] = new mutable.TreeSet[Int]()
 
-
   override def receive: Receive = {
 
     case createServerActor() => {
@@ -36,20 +35,16 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
       val serverActor = system.actorOf(Props(new ServerActor(nodeIndex, numNodes)), "server_actor_" + nodeIndex)
       if(activeNodes.nonEmpty){
 
+//        val successorNode = activeNodes.minAfter(nodeIndex+1)
+//        val successorValue = if (!successorNode.isEmpty) successorNode.head else activeNodes.toList(0)
         serverActor ! initializeFingerTable(nodeIndex)
         serverActor ! updateOthers(nodeIndex)
-
-        /*for ((k,v) <- nodes) {
-          val serverActor = context.system.actorSelection("akka://actor-system/user/server_actor_"+k)
-          serverActor ! updateFingerTable
-        }*/
       }
       else
         serverActor ! initializeFirstFingerTable(nodeIndex)
 
       unexploredNodes -= nodeIndex
       activeNodes.add(nodeIndex)
-      print(2)
     }
 
     case getDataSupervisor(id) => {
