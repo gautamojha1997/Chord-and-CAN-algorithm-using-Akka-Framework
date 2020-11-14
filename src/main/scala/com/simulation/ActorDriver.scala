@@ -7,10 +7,15 @@ import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import com.simulation.actors.servers.ServerActor
 import com.simulation.actors.supervisors.SupervisorActor
 import akka.util.Timeout
-import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getSnapshot}
+import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot}
 import com.simulation.actors.users.UserActor
+<<<<<<< HEAD
 import com.simulation.actors.users.UserActor.createUserActor
 import com.simulation.utils.Data
+=======
+import com.simulation.actors.users.UserActor.{createUserActor, getDataUserActor, loadDataUserActor}
+import com.simulation.beans.EntityDefinition
+>>>>>>> origin/master
 import com.typesafe.config.ConfigFactory
 import org.ddahl.rscala.RClient
 import org.slf4j.{Logger, LoggerFactory}
@@ -61,14 +66,19 @@ object ActorDriver {
    // val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
     val userActorId = Random.nextInt(numUsers)
     val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
+<<<<<<< HEAD
     dataHandlerActor ! UserActor.loadData(movieData(id))
+=======
+    // fetch entity definition from id
+    dataHandlerActor ! loadDataUserActor(data)
+>>>>>>> origin/master
   }
 
   def getData(id: Int): Any = {
     //val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
     val userActorId = Random.nextInt(numUsers)
     val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
-    val dataRetrieved = dataHandlerActor ? getData(id)
+    val dataRetrieved = dataHandlerActor ? getDataUserActor(id)
     val result = Await.result(dataRetrieved, timeout.duration)
     result
   }

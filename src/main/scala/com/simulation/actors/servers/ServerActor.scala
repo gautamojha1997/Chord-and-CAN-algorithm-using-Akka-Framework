@@ -3,10 +3,14 @@ import akka.actor.{Actor, ActorSelection}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
-import com.simulation.actors.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updatePredecessor, updateTable}
+import com.simulation.actors.servers.ServerActor.{getDataServer, getFingerValue, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
+<<<<<<< HEAD
 import com.simulation.utils.{ApplicationConstants, Data}
 import org.slf4j.{Logger, LoggerFactory}
+=======
+import com.simulation.utils.ApplicationConstants
+>>>>>>> origin/master
 
 import scala.language.postfixOps
 import scala.collection.mutable.ListBuffer
@@ -43,6 +47,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   override def receive = {
 
     case initializeFirstFingerTable(nodeIndex: Int) =>
+      node = nodeIndex
       List.tabulate(buckets)(x => finger_table +=
         (((nodeIndex + math.pow(2, x)) % math.pow(2, buckets)).toInt -> nodeIndex))
       logger.info(finger_table.toString)
@@ -116,6 +121,9 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     case getSnapshotServer() =>
       logger.info("In getsnapshot server")
       sender() ! finger_table
+
+    case getFingerValue() =>
+      sender() ! finger_table(0)
   }
 
 
@@ -167,5 +175,6 @@ object ServerActor {
   case class updateOthers(nodeVal: Int)
   case class updateTable(predecessorValue: Int, nodeVal: Int, i: Int)
   case class getSnapshotServer()
+  case class getFingerValue()
 
 }
