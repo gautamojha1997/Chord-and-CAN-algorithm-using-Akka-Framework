@@ -47,11 +47,8 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
 
       unexploredNodes -= nodeIndex
       activeNodes.add(nodeIndex)
-<<<<<<< HEAD
       logger.info(activeNodes.toString)
 
-=======
->>>>>>> origin/master
     }
 
     case getDataSupervisor(id) => {

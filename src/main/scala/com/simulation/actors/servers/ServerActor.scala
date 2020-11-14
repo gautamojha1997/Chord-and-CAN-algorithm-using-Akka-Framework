@@ -5,12 +5,9 @@ import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.actors.servers.ServerActor.{getDataServer, getFingerValue, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
-<<<<<<< HEAD
 import com.simulation.utils.{ApplicationConstants, Data}
 import org.slf4j.{Logger, LoggerFactory}
-=======
 import com.simulation.utils.ApplicationConstants
->>>>>>> origin/master
 
 import scala.language.postfixOps
 import scala.collection.mutable.ListBuffer
