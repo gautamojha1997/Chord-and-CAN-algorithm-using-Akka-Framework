@@ -28,6 +28,8 @@ libraryDependencies ++= Seq(
 
   "ch.qos.logback"    % "logback-classic" % "1.2.3",
 
-  "org.ddahl" %% "rscala" % "3.2.19"
+  "org.ddahl" %% "rscala" % "3.2.19",
+
+  "com.lightbend.akka" %% "akka-stream-alpakka-cassandra" % "2.0.2"
 
 )
