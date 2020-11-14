@@ -20,10 +20,10 @@ import scala.util.Random
 import scala.language.postfixOps
 
 
-class SupervisorActor(id: Int, numNodes: Int) extends Actor{
+class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor{
 
   var nodesActorMapper: mutable.Map[Int, Int] = mutable.HashMap[Int, Int]()
-  val system: ActorSystem = ActorSystem()
+  //val system: ActorSystem = ActorSystem("actorSystem")
   val timeout = Timeout(30 seconds)
   //check if inclusive
   val unexploredNodes = ListBuffer.range(0,numNodes)
@@ -72,9 +72,14 @@ class SupervisorActor(id: Int, numNodes: Int) extends Actor{
       activeNodes.map( server  => {
         logger.info("Get Snapshot")
         val serverActor = context.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + server)
-        logger.info(serverActor.toString())
+        //val myActor = system.actorOf(Props(new ServerActor(1,2)), name = "test")
+        //logger.info(myActor.path.toString)
+        logger.info(serverActor.pathString)
+        //val snapshot = myActor ? getSnapshotServer()
+        //val result = Await.result(snapshot, timeout.duration)
         val snapshot = serverActor ? getSnapshotServer()
         val result = Await.result(snapshot, timeout.duration)
+        logger.info(result.toString)
         sender() ! result
         })
     }

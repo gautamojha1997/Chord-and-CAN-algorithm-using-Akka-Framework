@@ -32,7 +32,7 @@ object ActorDriver {
 
   val serverActor = actorSystem.actorOf(Props(new ServerActor(1, numNodes)), "server_actor")
   val userActor = actorSystem.actorOf(Props(new UserActor(1, actorSystem)), "user_actor")
-  val supervisorActor = actorSystem.actorOf(Props(new SupervisorActor(1, numNodes)),"supervisor_actor")
+  val supervisorActor = actorSystem.actorOf(Props(new SupervisorActor(1, numNodes, actorSystem)),"supervisor_actor")
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 

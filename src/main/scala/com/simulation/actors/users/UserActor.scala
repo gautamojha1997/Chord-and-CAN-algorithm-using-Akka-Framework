@@ -17,7 +17,6 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
   val timeout = Timeout(15 seconds)
   override def receive: Receive = {
 
-
     case loadData(data) =>
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
       val nextActor = supervisorActor ? loadDataSupervisor(data)
