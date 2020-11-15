@@ -1,3 +1,3 @@
 package com.simulation.beans
 
-class EntityDefinition(var id: Int, var stockName: String)
+case class EntityDefinition(var id: Int, var name: String)

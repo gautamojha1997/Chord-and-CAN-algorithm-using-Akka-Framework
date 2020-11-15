@@ -48,7 +48,7 @@ object WebService {
             logger.info("Snapshot Web Service")
             val result = ActorDriver.printSnapshot()
             complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
-              "Snapshot created"
+              "<html><body>Snapshot created<br>"+ result +"</body></html>"
             ))
           },
 

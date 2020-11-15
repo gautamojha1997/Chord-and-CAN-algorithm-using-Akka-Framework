@@ -40,7 +40,7 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
 }
 
 object UserActor {
-  case class loadData(data:Data)
+  case class loadData(data:EntityDefinition)
   case class getDataUserActor(id:Int)
   case class createUserActor(id:Int)
 //

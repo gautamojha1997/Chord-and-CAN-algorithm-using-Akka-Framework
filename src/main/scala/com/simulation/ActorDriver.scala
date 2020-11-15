@@ -10,6 +10,7 @@ import akka.util.Timeout
 import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot}
 import com.simulation.actors.users.UserActor
 import com.simulation.actors.users.UserActor.{createUserActor, getDataUserActor}
+import com.simulation.beans.EntityDefinition
 import com.simulation.utils.Data
 import com.typesafe.config.ConfigFactory
 import org.ddahl.rscala.RClient
@@ -83,13 +84,13 @@ object ActorDriver {
     result
   }
 
-  def getMoviesData: ListBuffer[Data] = {
-    val dataList: ListBuffer[Data] = new ListBuffer[Data]
+  def getMoviesData: ListBuffer[EntityDefinition] = {
+    val dataList: ListBuffer[EntityDefinition] = new ListBuffer[EntityDefinition]
     val lines = Source.fromResource("data.csv")
     var i: Int = 0
     for (line <- lines.getLines.drop(1)) {
       val cols = line.split(",")
-      dataList += Data(i, cols(0))
+      dataList += EntityDefinition(i, cols(0))
       i += 1
     }
     dataList

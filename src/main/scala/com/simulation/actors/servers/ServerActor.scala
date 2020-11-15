@@ -94,7 +94,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
         predObj ! updateTable(predecessor, nodeIndex, i)
       }
 
-    case loadDataServer(data: Data) =>
+    case loadDataServer(data: EntityDefinition) =>
       logger.info("loadDataServer ServerActor")
       dht += (data.id -> data.name)
       val result = "Id: "+data.id + ", Name: " + data.name
@@ -169,7 +169,7 @@ object ServerActor {
   case class initializeFirstFingerTable(nodeIndex: Int)
   case class updateFingerTable()
   case class getDataServer(nodeIndex: Int, m: Int)
-  case class loadDataServer(data: Data)
+  case class loadDataServer(data: EntityDefinition)
   case class findSuccessor(index: Int)
   case class updatePredecessor(nodeIndex: Int)
   case class updateOthers(nodeVal: Int)

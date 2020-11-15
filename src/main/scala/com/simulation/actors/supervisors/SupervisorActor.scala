@@ -18,6 +18,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 import scala.language.postfixOps
+import scala.tools.nsc.doc.model.Entity
 
 class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor{
 
@@ -73,26 +74,24 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
     }
 
     case getSnapshot() =>
+      var outputString = ""
       activeNodes.map( server  => {
         logger.info("Get Snapshot")
         val serverActor = context.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + server)
-        //val myActor = system.actorOf(Props(new ServerActor(1,2)), name = "test")
-        //logger.info(myActor.path.toString)
         logger.info(serverActor.pathString)
-        //val snapshot = myActor ? getSnapshotServer()
-        //val result = Await.result(snapshot, timeout.duration)
         val snapshot = serverActor ? getSnapshotServer()
         val result = Await.result(snapshot, timeout.duration)
         logger.info(result.toString)
-        sender() ! result
+        outputString += result.toString + "\n"
         })
+      sender() ! outputString
     }
 }
 
 object SupervisorActor {
   case class createServerActor()
   case class getDataSupervisor(id: Int)
-  case class loadDataSupervisor(data: Data)
+  case class loadDataSupervisor(data: EntityDefinition)
   case class getSnapshot()
 }
 
