@@ -65,9 +65,9 @@ object WebService {
           path("lookup"){
             parameters("id"){
               id =>
-                ActorDriver.getData(id.toInt)
+                val result = ActorDriver.getData(id.toInt)
                 complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
-                  "Lookup value: " + id
+                  "Lookup value: " + result
                 ))
             }
           }

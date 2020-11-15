@@ -52,8 +52,11 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
     }
 
     case getDataSupervisor(id) => {
-      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.toList(Random.nextInt(activeNodes.size)))
-      val data = serverActor ? getDataServer(id,0)
+      val hash = md5(id.toString, numNodes) % numNodes
+      var chosenNode = activeNodes.minAfter(hash)
+      val node :Int = if(chosenNode.isEmpty) activeNodes.head else chosenNode.head
+      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + node) // (Random.nextInt(activeNodes.size)))
+      val data = serverActor ? getDataServer(id,0,hash)
       val result = Await.result(data, timeout.duration)
       sender() ! result
     }
@@ -61,16 +64,14 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
     // implement hashing function & load the data in appropriate node
     case loadDataSupervisor(data) => {
       logger.info("In loadDataSupervisor SupevisorActor")
-      val hash = md5(data.id.toString, numNodes)
-      var chosenNode = activeNodes.minAfter(hash).toString
-      if(chosenNode == "None")
-        chosenNode = activeNodes.head.toString
-      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + chosenNode)
+      val hash = md5(data.id.toString, numNodes) % numNodes
+      var chosenNode = activeNodes.minAfter(hash)
+      val node :Int = if(chosenNode.isEmpty) activeNodes.head else chosenNode.head
+      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + node)
       val resultFuture = serverActor ? loadDataServer(data)
       val result = Await.result(resultFuture, timeout.duration)
       sender() ! result
       //serverActor ! loadDataServer(data)
-
     }
 
     case getSnapshot() =>

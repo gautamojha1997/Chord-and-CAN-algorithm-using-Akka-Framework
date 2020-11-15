@@ -60,7 +60,7 @@ object ActorDriver {
   def loadData(id: Int): String = {
     logger.info("In loadData driver")
    // val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
-    val userActorId = Random.nextInt(numUsers)
+    val userActorId = 1 //Random.nextInt(numUsers)
     val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
     val resultFuture  = dataHandlerActor ? UserActor.loadData(movieData(id))
     val result = Await.result(resultFuture, timeout.duration)
@@ -69,10 +69,7 @@ object ActorDriver {
   }
 
   def getData(id: Int): Any = {
-    //val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
-//    val userActorId = Random.nextInt(numUsers)
-//    val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
-    val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/")
+    val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/1")
     val dataRetrieved = dataHandlerActor ? getDataUserActor(id)
     val result = Await.result(dataRetrieved, timeout.duration)
     result

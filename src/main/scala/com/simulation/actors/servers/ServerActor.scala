@@ -12,6 +12,7 @@ import scala.language.postfixOps
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.language.postfixOps
 
 class ServerActor(id: Int, numNodes: Int) extends Actor {
 
@@ -39,7 +40,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     false
   }
 
-  override def receive= {
+  override def receive = {
 
     case initializeFirstFingerTable(nodeIndex: Int) =>
       List.tabulate(buckets)(x => finger_table +=
@@ -101,23 +102,9 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       val result = "Id: "+ data.id + ", Name: " + data.name
       sender() ! result
 
-    case getDataServer(nodeIndex: Int, m: Int) =>
-      if(m != buckets){
-        val fingerTBuffer = finger_table.toSeq
-        List.tabulate(fingerTBuffer.size)(i=>
-        if(belongs(nodeIndex, fingerTBuffer(i)._1, fingerTBuffer((i+1)%fingerTBuffer.size)._1)){
-          if(fingerTBuffer(i)._2 != nodeIndex) {
-            val successorNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH +
-              fingerTBuffer(i)._2)
-            successorNode ! getDataServer(id, m + 1)
-          }
-          else {
-            val stockName = dht.get(nodeIndex)
-            sender() ! nodeIndex + " " + stockName
-          }
-        })
-      }
-      sender() ! ""
+    case getDataServer(id: Int, m: Int, hash: Int) =>
+      val output = getData(id: Int, m: Int, hash: Int)
+      sender() ! output
 
     case getSuccessor() =>
       sender() ! successor
@@ -128,6 +115,22 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
 
     case getFingerValue() =>
       sender() ! finger_table(0)
+  }
+
+  def getData(id: Int, m: Int, hash: Int) : String = {
+      if (m != buckets) {
+        val fingerTBuffer = finger_table.toSeq
+        List.tabulate(fingerTBuffer.size)(i =>
+          if (belongs(hash, fingerTBuffer(i)._1, fingerTBuffer((i + 1) % fingerTBuffer.size)._1)) {
+            val stockName = dht.get(id).head
+            return (id + "->" + stockName)
+          }
+          else {
+            val successorNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + fingerTBuffer(i)._2)
+            successorNode ! getDataServer(id, m + 1, hash)
+          })
+      }
+    ""
   }
 
   def findSuccessor(nodeIndex: Int) :Int = {
@@ -173,7 +176,7 @@ object ServerActor {
   case class initializeFingerTable(nodeIndex: Int)
   case class initializeFirstFingerTable(nodeIndex: Int)
   case class updateFingerTable()
-  case class getDataServer(nodeIndex: Int, m: Int)
+  case class getDataServer(nodeIndex: Int, m: Int, hash:Int)
   case class loadDataServer(data: EntityDefinition)
   case class findSuccessor(index: Int)
   case class updatePredecessor(nodeIndex: Int)
