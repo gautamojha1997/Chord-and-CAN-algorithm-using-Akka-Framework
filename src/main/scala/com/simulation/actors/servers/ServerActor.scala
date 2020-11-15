@@ -3,7 +3,7 @@ import akka.actor.{Actor, ActorSelection, Props}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
-import com.simulation.actors.servers.ServerActor.{findSuccessor, getDataServer, getFingerValue, getSnapshotServer, getSuccessor, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updatePredecessor, updateTable}
+import com.simulation.actors.servers.ServerActor.{findSuccessor, getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
 import org.slf4j.{Logger, LoggerFactory}
 import com.simulation.utils.ApplicationConstants
@@ -66,9 +66,9 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       val firstVal = Await.result(successorValue, 500.seconds).asInstanceOf[Int]
       logger.info("Successor Completed: " + finger_table.toString)
       finger_table += (firstKey -> firstVal)
-      successor = firstVal
-      val successorActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + finger_table(0))
-      successorActor ! updatePredecessor(id)
+      //successor = firstVal
+      val successorActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + finger_table.toSeq(0)._2)
+      //successorActor ! updatePredecessor(id)
 
       logger.info("First Instance: " + finger_table.toString)
 
@@ -100,6 +100,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
         finger_table(i) = nodeIndex
         val predObj = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + predecessor)
         predObj ! updateTable(predecessor, nodeIndex, i)
+        fingerNode ! updateFingerTable(finger_table, nodeIndex)
       }
 
     case loadDataServer(data: EntityDefinition) =>
@@ -112,15 +113,19 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       val output = getData(id: Int, m: Int, hash: Int)
       sender() ! output
 
-    case getSuccessor() =>
-      sender() ! successor
-
     case getSnapshotServer() =>
       logger.info("In getsnapshot server")
       sender() ! finger_table
 
-    case getFingerValue() =>
-      sender() ! finger_table(0)
+    case findSuccessor(nodeIndex: Int) =>
+      logger.info("In find successor, node index = " + nodeIndex + " id = " + id)
+      val arbitraryNode: Int = findPredecessor(nodeIndex)
+      logger.info("In find successor, predecessor value = " + arbitraryNode)
+      val successorValue = fingerNode ? fetchFingerTable(arbitraryNode)
+      val successorValueR = Await.result(successorValue, timeout.duration)
+        .asInstanceOf[mutable.LinkedHashMap[Int, Int]].toSeq(0)._2.asInstanceOf[Int]
+      logger.info("Successor Found, value = " + successorValueR)
+      sender() ! successorValueR
   }
 
   def getData(id: Int, m: Int, hash: Int) : String = {
@@ -139,16 +144,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     ""
   }
 
-  def findSuccessor(nodeIndex: Int) :Int = {
-    logger.info("In find successor, node index = "+nodeIndex+" id = "+id)
-    val arbitraryNode :Int = findPredecessor(nodeIndex)
-    logger.info("In find successor, predecessor value = "+arbitraryNode)
-    val successorValue = fingerNode ? fetchFingerTable(arbitraryNode)
-    val successorValueR = Await.result(successorValue, timeout.duration)
-      .asInstanceOf[mutable.LinkedHashMap[Int, Int]].toSeq(0)._2.asInstanceOf[Int]
-    logger.info("Successor Found, value = " + successorValueR)
-    successorValueR
-  }
+
 
   def findPredecessor(nodeIndex: Int): Int ={
     logger.info("In find predecessor, node index = "+nodeIndex+" id = "+id)
@@ -194,6 +190,4 @@ object ServerActor {
   case class updateOthers(nodeVal: Int)
   case class updateTable(predecessorValue: Int, nodeVal: Int, i: Int)
   case class getSnapshotServer()
-  case class getFingerValue()
-  case class getSuccessor()
 }

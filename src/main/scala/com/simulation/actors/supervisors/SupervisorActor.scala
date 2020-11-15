@@ -8,6 +8,7 @@ import com.simulation.actors.servers.ServerActor
 import com.simulation.actors.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers}
 import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot, loadDataSupervisor}
 import com.simulation.beans.EntityDefinition
+import com.simulation.utils.FingerActor.fetchFingerTable
 import com.simulation.utils.{ApplicationConstants, Data}
 import com.simulation.utils.Utility.md5
 import org.slf4j.{Logger, LoggerFactory}
@@ -29,6 +30,7 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
   val unexploredNodes = ListBuffer.range(0,numNodes)
   var activeNodes: mutable.TreeSet[Int] = new mutable.TreeSet[Int]()
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
+  val fingerNode = context.system.actorSelection("akka://actorSystem/user/finger_actor")
 
   override def receive: Receive = {
 
@@ -78,9 +80,7 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
       var outputString = ""
       activeNodes.map( server  => {
         logger.info("Get Snapshot")
-        val serverActor = context.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + server)
-        logger.info(serverActor.pathString)
-        val snapshot = serverActor ? getSnapshotServer()
+        val snapshot = fingerNode ? fetchFingerTable(server)
         val result = Await.result(snapshot, timeout.duration)
         logger.info(result.toString)
         outputString += server +" -> " + result.toString + "\n"
