@@ -7,8 +7,9 @@ import com.simulation.actors.servers.ServerActor.{findSuccessor, getDataServer, 
 import com.simulation.beans.EntityDefinition
 import org.slf4j.{Logger, LoggerFactory}
 import com.simulation.utils.ApplicationConstants
-import com.simulation.utils.FingerActor.{updateFingerTable, fetchFingerTable}
+import com.simulation.utils.FingerActor.{fetchFingerTable, updateFingerTable}
 
+import scala.collection.mutable
 import scala.language.postfixOps
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -77,8 +78,8 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
         val Val = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
         finger_table += (key -> Val)
       })
-
       logger.info("Second Instance: " + finger_table.toString)
+      fingerNode ! updateFingerTable(finger_table, nodeIndex)
 
 
     case updateOthers(nodeIndex: Int) =>
@@ -142,9 +143,9 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     logger.info("In find successor, node index = "+nodeIndex+" id = "+id)
     val arbitraryNode :Int = findPredecessor(nodeIndex)
     logger.info("In find successor, predecessor value = "+arbitraryNode)
-    val successorActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + arbitraryNode)
-    val successorValue = successorActor ? getSuccessor()
-    val successorValueR = Await.result(successorValue, timeout.duration).toString.toInt
+    val successorValue = fingerNode ? fetchFingerTable(arbitraryNode)
+    val successorValueR = Await.result(successorValue, timeout.duration)
+      .asInstanceOf[mutable.LinkedHashMap[Int, Int]].toSeq(0)._2.asInstanceOf[Int]
     logger.info("Successor Found, value = " + successorValueR)
     successorValueR
   }
@@ -152,8 +153,11 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   def findPredecessor(nodeIndex: Int): Int ={
     logger.info("In find predecessor, node index = "+nodeIndex+" id = "+id)
     var arbitraryNode = id
-    logger.info("In find predecessor, successor node value = "+ successor)
-    while(!belongs(nodeIndex, arbitraryNode , successor)){
+    val successorValue = fingerNode ? fetchFingerTable(arbitraryNode)
+    val successorValueR = Await.result(successorValue, timeout.duration)
+      .asInstanceOf[mutable.LinkedHashMap[Int, Int]].toSeq(0)._2.asInstanceOf[Int]
+    logger.info("In find predecessor, successor node value = "+ successorValueR)
+    while(!belongs(nodeIndex, arbitraryNode , successorValueR)){
       arbitraryNode =  closestPrecedingFinger(nodeIndex)
     }
     logger.info("Predecessor found, value = "+arbitraryNode)
@@ -163,18 +167,14 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   def closestPrecedingFinger(nodeIndex: Int): Int = {
     val fingerValue = fingerNode ? fetchFingerTable(nodeIndex)
     val fingerValueR = Await.result(fingerValue, timeout.duration)
+      .asInstanceOf[mutable.LinkedHashMap[Int, Int]].toSeq(0)._2.asInstanceOf[Int]
 
-    val fingerTBuffer = fingerValueR // finger_table.toSeq
-
-//    val fingerTBuffer = finger_table.toSeq
     for (i <- (0 until buckets).reverse) {
-//      val temp = fingerTBuffer(i)._2
-//      logger.info(temp+"")
-//      if(belongs(temp, id, nodeIndex)){
-//        logger.info("Found closest p
-      //        ue = " + temp)
-//        return temp
-//      }
+      logger.info("In closest preceeding finger, value = "+fingerValueR+"")
+      if(belongs(fingerValueR, id, nodeIndex)){
+        logger.info("Found closest p ue = " + fingerValueR)
+        return fingerValueR
+      }
     }
     logger.info("Found closest preceding finger, value = " + id)
     id

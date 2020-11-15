@@ -7,7 +7,7 @@ import scala.collection.mutable
 
 class FingerActor extends Actor{
 
-  var finger_table = mutable.HashMap[Int,scala.collection.mutable.LinkedHashMap[Int, Int]]()
+  var finger_table = new Array[scala.collection.mutable.LinkedHashMap[Int, Int]](16)
 
   override def receive: Receive = {
     case updateFingerTable(finger: scala.collection.mutable.LinkedHashMap[Int, Int], nodeIndex: Int) =>
@@ -15,6 +15,7 @@ class FingerActor extends Actor{
 
     case fetchFingerTable(nodeIndex: Int) =>
       sender() ! finger_table(nodeIndex)
+
   }
 }
 
