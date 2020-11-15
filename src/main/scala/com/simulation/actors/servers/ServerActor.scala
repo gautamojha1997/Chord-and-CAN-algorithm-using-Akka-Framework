@@ -95,7 +95,10 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       }
 
     case loadDataServer(data: Data) =>
+      logger.info("loadDataServer ServerActor")
       dht += (data.id -> data.name)
+      val result = "Id: "+data.id + ", Name: " + data.name
+      sender() ! result
 
     case getDataServer(nodeIndex: Int, m: Int) =>
       if(m == buckets){

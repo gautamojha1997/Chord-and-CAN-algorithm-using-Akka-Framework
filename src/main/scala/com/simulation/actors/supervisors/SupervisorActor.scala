@@ -19,7 +19,6 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Random
 import scala.language.postfixOps
 
-
 class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor{
 
   var nodesActorMapper: mutable.Map[Int, Int] = mutable.HashMap[Int, Int]()
@@ -60,12 +59,17 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
 
     // implement hashing function & load the data in appropriate node
     case loadDataSupervisor(data) => {
+      logger.info("In loadDataSupervisor SupevisorActor")
       val hash = md5(data.id.toString, numNodes)
       var chosenNode = activeNodes.minAfter(hash).toString
       if(chosenNode == "None")
         chosenNode = activeNodes.head.toString
       val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + chosenNode)
-      serverActor ! loadDataServer(data)
+      val resultFuture = serverActor ? loadDataServer(data)
+      val result = Await.result(resultFuture, timeout.duration)
+      sender() ! result
+      //serverActor ! loadDataServer(data)
+
     }
 
     case getSnapshot() =>

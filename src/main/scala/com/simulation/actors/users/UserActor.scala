@@ -8,16 +8,19 @@ import com.simulation.actors.supervisors.SupervisorActor.{getDataSupervisor, loa
 import com.simulation.actors.users.UserActor.{createUserActor, getDataUserActor, loadData}
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.Data
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
 
 class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
   val timeout = Timeout(15 seconds)
   override def receive: Receive = {
 
     case loadData(data) =>
+      logger.info("In loadData UserActor")
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
       val nextActor = supervisorActor ? loadDataSupervisor(data)
       val result = Await.result(nextActor, timeout.duration)

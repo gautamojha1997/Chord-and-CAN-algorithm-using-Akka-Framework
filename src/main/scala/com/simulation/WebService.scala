@@ -56,9 +56,9 @@ object WebService {
             logger.info("In loadData webservice")
             parameters("id"){
               (id) =>
-                ActorDriver.loadData(id.toInt)
+                val result = ActorDriver.loadData(id.toInt)
                 complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
-                  "Added: " + id
+                  "Added: " + result
                 ))
             }
           },
