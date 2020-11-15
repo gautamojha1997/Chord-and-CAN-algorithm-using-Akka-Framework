@@ -11,7 +11,7 @@ import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, get
 import com.simulation.actors.users.UserActor
 import com.simulation.actors.users.UserActor.{createUserActor, getDataUserActor}
 import com.simulation.beans.EntityDefinition
-import com.simulation.utils.Data
+import com.simulation.utils.{Data, FingerActor}
 import com.typesafe.config.ConfigFactory
 import org.ddahl.rscala.RClient
 import org.slf4j.{Logger, LoggerFactory}
@@ -34,6 +34,7 @@ object ActorDriver {
   val serverActor = actorSystem.actorOf(Props(new ServerActor(1, numNodes)), "server_actor")
   val userActor = actorSystem.actorOf(Props(new UserActor(1, actorSystem)), "user_actor")
   val supervisorActor = actorSystem.actorOf(Props(new SupervisorActor(1, numNodes, actorSystem)),"supervisor_actor")
+  val fingerActor = actorSystem.actorOf(Props(new FingerActor()),"finger_actor")
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 

@@ -1,12 +1,13 @@
 package com.simulation.actors.servers
-import akka.actor.{Actor, ActorSelection}
+import akka.actor.{Actor, ActorSelection, Props}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
-import com.simulation.actors.servers.ServerActor.{getDataServer, getFingerValue, getSnapshotServer, getSuccessor, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updatePredecessor, updateTable}
+import com.simulation.actors.servers.ServerActor.{findSuccessor, getDataServer, getFingerValue, getSnapshotServer, getSuccessor, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
 import org.slf4j.{Logger, LoggerFactory}
 import com.simulation.utils.ApplicationConstants
+import com.simulation.utils.FingerActor.{updateFingerTable, fetchFingerTable}
 
 import scala.language.postfixOps
 import scala.collection.mutable.ListBuffer
@@ -16,6 +17,7 @@ import scala.language.postfixOps
 
 class ServerActor(id: Int, numNodes: Int) extends Actor {
 
+  val fingerNode = context.system.actorSelection("akka://actorSystem/user/finger_actor")
   var dht = scala.collection.mutable.HashMap[Int, String]()
   var finger_table = scala.collection.mutable.LinkedHashMap[Int, Int]()
   var predecessor: Int = _
@@ -48,6 +50,8 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       logger.info(finger_table.toString)
       predecessor = nodeIndex
       successor = nodeIndex
+      fingerNode ! updateFingerTable(finger_table, nodeIndex)
+
 
     case updatePredecessor(nodeIndex: Int) =>
       predecessor = nodeIndex
@@ -78,13 +82,14 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
 
 
     case updateOthers(nodeIndex: Int) =>
-      List.tabulate(buckets)(i => {
-          val arbitraryActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + id)
-          val arbitraryValue = arbitraryActor ? findPredecessor((nodeIndex - math.pow(2, i)).toInt)
-          val predecessorValue = Await.result(arbitraryValue, timeout.duration).asInstanceOf[Int]
-          val predecessorObject = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + predecessorValue)
-          predecessorObject ! updateTable(predecessorValue, nodeIndex, i)
-        })
+      for (i <- 1 to buckets) {
+        val arbitraryActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + id)
+        val arbitraryValue = arbitraryActor ? findPredecessor((nodeIndex - math.pow(2, i - 1)).toInt)
+        val predecessorValue = Await.result(arbitraryValue, timeout.duration).asInstanceOf[Int]
+        val predecessorObject = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + predecessorValue)
+        predecessorObject ! updateTable(predecessorValue, nodeIndex, i)
+      }
+
 
       // predecessorValue -> n
       // nodeIndex -> s
@@ -149,21 +154,27 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     var arbitraryNode = id
     logger.info("In find predecessor, successor node value = "+ successor)
     while(!belongs(nodeIndex, arbitraryNode , successor)){
-      arbitraryNode = closest_preceding_finger(nodeIndex)
+      arbitraryNode =  closestPrecedingFinger(nodeIndex)
     }
     logger.info("Predecessor found, value = "+arbitraryNode)
     arbitraryNode
   }
 
-  def closest_preceding_finger(nodeIndex: Int): Int = {
-    val fingerTBuffer = finger_table.toSeq
+  def closestPrecedingFinger(nodeIndex: Int): Int = {
+    val fingerValue = fingerNode ? fetchFingerTable(nodeIndex)
+    val fingerValueR = Await.result(fingerValue, timeout.duration)
+
+    val fingerTBuffer = fingerValueR // finger_table.toSeq
+
+//    val fingerTBuffer = finger_table.toSeq
     for (i <- (0 until buckets).reverse) {
-      val temp = fingerTBuffer(i)._2
-      logger.info(temp+"")
-      if(belongs(temp, id, nodeIndex)){
-        logger.info("Found closest preceding finger, value = " + temp)
-        return temp
-      }
+//      val temp = fingerTBuffer(i)._2
+//      logger.info(temp+"")
+//      if(belongs(temp, id, nodeIndex)){
+//        logger.info("Found closest p
+      //        ue = " + temp)
+//        return temp
+//      }
     }
     logger.info("Found closest preceding finger, value = " + id)
     id

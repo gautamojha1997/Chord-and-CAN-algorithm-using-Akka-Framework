@@ -53,7 +53,7 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
 
     case getDataSupervisor(id) => {
       val hash = md5(id.toString, numNodes) % numNodes
-      var chosenNode = activeNodes.minAfter(hash)
+      val chosenNode = activeNodes.minAfter(hash)
       val node :Int = if(chosenNode.isEmpty) activeNodes.head else chosenNode.head
       val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + node) // (Random.nextInt(activeNodes.size)))
       val data = serverActor ? getDataServer(id,0,hash)
