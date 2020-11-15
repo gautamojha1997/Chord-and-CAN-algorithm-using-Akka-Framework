@@ -58,6 +58,9 @@ open source toolkit for designing scalable, resilient systems that span processo
 - SupervisorActor 
     - This class acts as a bridge between user and the server actor. The user actor invokes the messages defined in this class which returns results by invoking messages defined in the ServerActor.
     
+- Utility 
+    - This object file takes a string and number of bits to return hashed value used for generating keys inserted into DHT and for data units.
+    - The hashing algorithm used is MD5.
     
 ## Results
         
