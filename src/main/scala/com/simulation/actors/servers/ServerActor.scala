@@ -139,7 +139,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     val successorValueR = Await.result(successorValue, timeout.duration).toString.toInt
     logger.info("Successor Found, value = " + successorValueR)
     successorValueR
-
   }
 
   def findPredecessor(nodeIndex: Int): Int ={
@@ -183,5 +182,4 @@ object ServerActor {
   case class getSnapshotServer()
   case class getFingerValue()
   case class getSuccessor()
-
 }
