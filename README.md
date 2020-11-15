@@ -31,6 +31,37 @@ open source toolkit for designing scalable, resilient systems that span processo
         - Lookup Data : Clicking this button calls method getData(id.toInt) which is used by the user to look data over a server node using Chord Protocol. To look-up data append ?id=<any integer> to your link.
         - Snapshot : Clicking this button simply returns all the result for the simulation.
         
+- ActorDriver
+    - This object file defines the number of users, servers, ActorSystem, Actors (serverActor, userActor, supervisorActor).
+    - It also defines methods used by Webservices and defined in the actor class files to load data, lookup data and display the result.
+
+-  ServerActor
+    - This class file represents actor-server which implements chord algorithm and defines messages as follows:
+        - case initializeFirstFingerTable(nodeIndex: Int) : It initializes the first finger table for the first server-node.
+        - case initializeFingerTable(nodeIndex: Int) : It initializes the finger table for all the server nodes after the first one.
+        - case updateOthers(nodeIndex: Int) : It updates all nodes whose finger table should refer to the new node which joins the network.
+        - case updateTable(predecessorValue:Int, nodeIndex: Int, i: Int) : It is invoked by updateOthers which recursively updates finger-table.
+        - case updatePredecessor(nodeIndex: Int) : This case class updates the predecessor.
+        - case getSuccessor() : Returns the successor of the given entry.
+        - case getDataServer(id: Int, m: Int, hash: Int) : Returns output when looked-up is performed. 
+    - Also, the class defines following methods :
+        - getData(id: Int, m: Int, hash: Int) : Returns result in the form of string when invoked by getDataServer(id: Int, m: Int, hash: Int).
+        - findSuccessor(nodeIndex: Int) : Returns successor value for the given node by fetching successor value for an arbitrary node and eventually updating the successor value for the given node.
+        - findPredecessor(nodeIndex: Int) : Returns predecessor value for the given node by invoking another method closestPrecedingFinger(nodeIndex: Int) which returns finger table value for the given node.
+        - belongs(s:Int, n: Int, successorValue: Int) : Invoked by updateTable() to check whether the node belongs within the range of predecessor and fingerIthEntry value.
+        
+- UserActor
+    - This class file represents actor-user and defines messages as follows:
+        - case class loadData(data:EntityDefinition) : Returns result of the loaded data from the server to the user.
+        - case getDataUserActor(id) : Returns result by looking up data from the server.
+        - case createUserActor(id) : Returns path of created user actor.
+- SupervisorActor 
+    - This class acts as a bridge between user and the server actor. The user actor invokes the messages defined in this class which returns results by invoking messages defined in the ServerActor.
+    
+    
+## Results
+        
+        
         
 
 
