@@ -101,7 +101,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       sender() ! result
 
     case getDataServer(nodeIndex: Int, m: Int) =>
-      if(m == buckets){
+      if(m != buckets){
         val fingerTBuffer = finger_table.toSeq
         List.tabulate(fingerTBuffer.size)(i=>
         if(belongs(nodeIndex, fingerTBuffer(i)._1, fingerTBuffer((i+1)%fingerTBuffer.size)._1)){

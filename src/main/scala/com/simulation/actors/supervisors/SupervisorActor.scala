@@ -52,7 +52,7 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
     }
 
     case getDataSupervisor(id) => {
-      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + 0)
+      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.toList(Random.nextInt(activeNodes.size)))
       val data = serverActor ? getDataServer(id,0)
       val result = Await.result(data, timeout.duration)
       sender() ! result
@@ -82,7 +82,7 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
         val snapshot = serverActor ? getSnapshotServer()
         val result = Await.result(snapshot, timeout.duration)
         logger.info(result.toString)
-        outputString += result.toString + "\n"
+        outputString += server +" -> " + result.toString + "\n"
         })
       sender() ! outputString
     }

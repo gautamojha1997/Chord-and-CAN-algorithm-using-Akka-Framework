@@ -70,8 +70,9 @@ object ActorDriver {
 
   def getData(id: Int): Any = {
     //val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
-    val userActorId = Random.nextInt(numUsers)
-    val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
+//    val userActorId = Random.nextInt(numUsers)
+//    val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
+    val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/")
     val dataRetrieved = dataHandlerActor ? getDataUserActor(id)
     val result = Await.result(dataRetrieved, timeout.duration)
     result
