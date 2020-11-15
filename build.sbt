@@ -6,6 +6,8 @@ scalaVersion := "2.13.3"
 
 libraryDependencies ++= Seq(
 
+  "org.scalatest" %% "scalatest" % "3.0.8" % "test",
+
   "com.typesafe" % "config" % "1.4.1",
 
   "junit" % "junit" % "4.13.1" % Test,
