@@ -32,6 +32,8 @@ libraryDependencies ++= Seq(
 
   "org.ddahl" %% "rscala" % "3.2.19",
 
-  "com.lightbend.akka" %% "akka-stream-alpakka-cassandra" % "2.0.2"
+  "com.lightbend.akka" %% "akka-stream-alpakka-cassandra" % "2.0.2",
+
+  "org.scalatest" %% "scalatest" % "3.2.3",
 
 )

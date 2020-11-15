@@ -34,17 +34,18 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
 
     case createServerActor() => {
       val nodeIndex = unexploredNodes(Random.nextInt(unexploredNodes.size))
-      val serverActor = system.actorOf(Props(new ServerActor(nodeIndex, numNodes)), "server_actor_" + nodeIndex)
+      logger.info("Sever Actor Created: " + nodeIndex)
       if(activeNodes.nonEmpty){
-
-//        val successorNode = activeNodes.minAfter(nodeIndex+1)
-//        val successorValue = if (!successorNode.isEmpty) successorNode.head else activeNodes.toList(0)
+        val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.toList(0))
+        //        val successorNode = activeNodes.minAfter(nodeIndex+1)
+//        val successorValue: Int = if (!successorNode.isEmpty) successorNode.head else activeNodes.toList(0)
         serverActor ! initializeFingerTable(nodeIndex)
         serverActor ! updateOthers(nodeIndex)
       }
-      else
+      else {
+        val serverActor = system.actorOf(Props(new ServerActor(nodeIndex, numNodes)), "server_actor_" + nodeIndex)
         serverActor ! initializeFirstFingerTable(nodeIndex)
-
+      }
       unexploredNodes -= nodeIndex
       activeNodes.add(nodeIndex)
       logger.info(activeNodes.toString)
