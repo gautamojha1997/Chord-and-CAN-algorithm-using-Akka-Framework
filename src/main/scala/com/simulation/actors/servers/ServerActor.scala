@@ -3,9 +3,8 @@ import akka.actor.{Actor, ActorSelection}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
-import com.simulation.actors.servers.ServerActor.{getDataServer, getFingerValue, getSuccessor, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updatePredecessor, updateTable}
+import com.simulation.actors.servers.ServerActor.{getDataServer, getFingerValue, getSnapshotServer, getSuccessor, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updatePredecessor, updateTable}
 import com.simulation.beans.EntityDefinition
-import com.simulation.utils.{ApplicationConstants, Data}
 import org.slf4j.{Logger, LoggerFactory}
 import com.simulation.utils.ApplicationConstants
 
@@ -13,7 +12,6 @@ import scala.language.postfixOps
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import scala.language.postfixOps
 
 class ServerActor(id: Int, numNodes: Int) extends Actor {
 
@@ -21,7 +19,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   var finger_table = scala.collection.mutable.LinkedHashMap[Int, Int]()
   var predecessor: Int = _
   var successor: Int = _
-  val timeout = Timeout(20 seconds)
+  val timeout = Timeout(200 seconds)
   val buckets = (Math.log(numNodes)/Math.log(2.0)).toInt
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -41,7 +39,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     false
   }
 
-  override def receive = {
+  override def receive= {
 
     case initializeFirstFingerTable(nodeIndex: Int) =>
       List.tabulate(buckets)(x => finger_table +=
@@ -57,13 +55,10 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       val firstKey = ((nodeIndex + math.pow(2, 0)) % math.pow(2, buckets)).toInt
       val arbitraryNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
       logger.info(arbitraryNode.toString())
-//      successor = successorNode
-//      List.tabulate(buckets)(x => finger_table +=
-//        (((nodeIndex + math.pow(2, x)) % math.pow(2, buckets)).toInt -> successorNode))
       logger.info(finger_table.toString)
       val successorValue = arbitraryNode ? findSuccessor(firstKey)
-      logger.info("Successor Found: " + finger_table.toString)
-      val firstVal = Await.result(successorValue, timeout.duration).toString.toInt
+      val firstVal = Await.result(successorValue, 500.seconds).asInstanceOf[Int]
+      logger.info("Successor Completed: " + finger_table.toString)
       finger_table += (firstKey -> firstVal)
       successor = firstVal
       val successorActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + finger_table(0))
@@ -74,7 +69,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       List.tabulate(buckets-1) ({ x =>
         val key = ((nodeIndex + math.pow(2, x + 1)) % math.pow(2, buckets)).toInt
         val successorValue = arbitraryNode ? findSuccessor(key)
-        val Val = Await.result(successorValue, timeout.duration).toString.toInt
+        val Val = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
         finger_table += (key -> Val)
       })
 
@@ -83,7 +78,9 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
 
     case updateOthers(nodeIndex: Int) =>
       List.tabulate(buckets)(i => {
-          val predecessorValue = findPredecessor((nodeIndex - math.pow(2, i)).toInt)
+          val arbitraryActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + id)
+          val arbitraryValue = arbitraryActor ? findPredecessor((nodeIndex - math.pow(2, i)).toInt)
+          val predecessorValue = Await.result(arbitraryValue, timeout.duration).asInstanceOf[Int]
           val predecessorObject = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + predecessorValue)
           predecessorObject ! updateTable(predecessorValue, nodeIndex, i)
         })
@@ -169,6 +166,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     logger.info("Found closest preceding finger, value = " + id)
     id
   }
+
 
 }
 
