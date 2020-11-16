@@ -1,7 +1,7 @@
 package com.simulation.utils
 
 import akka.actor.Actor
-import com.simulation.utils.FingerActor.{fetchFingerTable, getPredecessor, getSuccessor, setPredecessor, setSuccessor, updateFingerTable}
+import com.simulation.utils.FingerActor.{fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, updateFingerTable}
 
 import scala.collection.mutable
 
@@ -18,6 +18,13 @@ class FingerActor extends Actor{
 
     case fetchFingerTable(nodeIndex: Int) =>
       sender() ! finger_table(nodeIndex)
+
+    case getFingerValue(nodeIndex: Int, index: Int) =>
+      sender() ! finger_table(nodeIndex).toSeq(index)._2
+
+    case setFingerValue(nodeIndex: Int, index: Int, value:Int) =>
+      val key = finger_table(nodeIndex).toSeq(index)._1
+      finger_table(nodeIndex).put(key, value)
 
     case getSuccessor(nodeIndex: Int) =>
       sender() ! successor(nodeIndex)
@@ -36,6 +43,8 @@ class FingerActor extends Actor{
 object FingerActor {
   case class fetchFingerTable(nodeIndex: Int)
   case class updateFingerTable(finger: scala.collection.mutable.LinkedHashMap[Int, Int], nodeIndex: Int)
+  case class getFingerValue(nodeIndex: Int, index: Int)
+  case class setFingerValue(nodeIndex: Int, index: Int, value:Int)
   case class getSuccessor(nodeIndex: Int)
   case class getPredecessor(nodeIndex: Int)
   case class setSuccessor(nodeIndex: Int, value: Int)
