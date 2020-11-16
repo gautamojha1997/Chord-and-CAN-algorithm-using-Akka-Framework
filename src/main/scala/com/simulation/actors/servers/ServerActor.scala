@@ -7,7 +7,7 @@ import com.simulation.actors.servers.ServerActor.{findSuccessor, getDataServer, 
 import com.simulation.beans.EntityDefinition
 import org.slf4j.{Logger, LoggerFactory}
 import com.simulation.utils.ApplicationConstants
-import com.simulation.utils.FingerActor.{fetchFingerTable, updateFingerTable}
+import com.simulation.utils.FingerActor.{fetchFingerTable, getPredecessor, setPredecessor, setSuccessor, updateFingerTable}
 
 import scala.collection.mutable
 import scala.language.postfixOps
@@ -49,8 +49,8 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       List.tabulate(buckets)(x => finger_table +=
         (((nodeIndex + math.pow(2, x)) % math.pow(2, buckets)).toInt -> nodeIndex))
       logger.info(finger_table.toString)
-      predecessor = nodeIndex
-      successor = nodeIndex
+      fingerNode ! setPredecessor(nodeIndex, nodeIndex)
+      fingerNode ! setSuccessor(nodeIndex, nodeIndex)
       fingerNode ! updateFingerTable(finger_table, nodeIndex)
 
 
@@ -63,12 +63,13 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       logger.info(arbitraryNode.toString())
       logger.info(finger_table.toString)
       val successorValue = arbitraryNode ? findSuccessor(firstKey)
-      val firstVal = Await.result(successorValue, 500.seconds).asInstanceOf[Int]
+      val firstVal = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
       logger.info("Successor Completed: " + finger_table.toString)
       finger_table += (firstKey -> firstVal)
-      //successor = firstVal
-      val successorActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + finger_table.toSeq(0)._2)
-      //successorActor ! updatePredecessor(id)
+      fingerNode ! setSuccessor(nodeIndex, firstVal)
+      val newPredecessor = fingerNode ? getPredecessor(firstVal)
+      val newPredecessorR = Await.result(newPredecessor, timeout.duration).asInstanceOf[Int]
+      fingerNode ! setPredecessor(firstVal, newPredecessorR)
 
       logger.info("First Instance: " + finger_table.toString)
 

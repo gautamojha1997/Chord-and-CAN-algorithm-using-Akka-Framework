@@ -25,11 +25,11 @@ class FingerActor extends Actor{
     case getPredecessor(nodeIndex: Int) =>
       sender() ! predecessor(nodeIndex)
 
-    case setSuccessor(nodeIndex: Int) =>
-      sender() ! successor(nodeIndex)
+    case setSuccessor(nodeIndex: Int, value: Int) =>
+      successor(nodeIndex) = value
 
-    case setPredecessor(nodeIndex: Int) =>
-      sender() ! predecessor(nodeIndex)
+    case setPredecessor(nodeIndex: Int, value: Int) =>
+      predecessor(nodeIndex) = value
   }
 }
 
@@ -38,6 +38,6 @@ object FingerActor {
   case class updateFingerTable(finger: scala.collection.mutable.LinkedHashMap[Int, Int], nodeIndex: Int)
   case class getSuccessor(nodeIndex: Int)
   case class getPredecessor(nodeIndex: Int)
-  case class setSuccessor(nodeIndex: Int)
-  case class setPredecessor(nodeIndex: Int)
+  case class setSuccessor(nodeIndex: Int, value: Int)
+  case class setPredecessor(nodeIndex: Int, value: Int)
 }
