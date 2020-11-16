@@ -70,37 +70,47 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
 
       logger.info("First Instance: " + finger_table.toString)
 
-      List.tabulate(buckets-1) ({ x =>
-        val key = ((id + math.pow(2, x + 1)) % math.pow(2, buckets)).toInt
-        val successorValue = arbitraryNode ? findSuccessor(key)
-        val Val = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
-        finger_table += (key -> Val)
+      (0 to buckets-2).foreach({ i =>
+        val key = ((id + math.pow(2, i + 1)) % math.pow(2, buckets)).toInt
+        val initialValue = finger_table.toSeq(i)._2
+        if(belongs(key, id, initialValue)) {
+          val successorValueR = initialValue
+          finger_table += (key -> successorValueR)
+        }
+        else{
+          val successorValue = arbitraryNode ? findSuccessor(key)
+          val successorValueR = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
+          finger_table += (key -> successorValueR)
+        }
       })
       logger.info("Second Instance: " + finger_table.toString)
+      val ftable = fingerNode ? fetchFingerTable(nodeIndex)
+      val ftableN  = Await.result(ftable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]]
+      logger.info("Second Instance for Node Index: " + ftableN.toString)
       fingerNode ! updateFingerTable(finger_table, id)
 
     case updateOthers() =>
       for (i <- 1 until buckets) {
-        val predecessorValue = findPredecessor((id - math.pow(2, i - 1)).toInt)
+        val predecessorValue = findPredecessor(((buckets + id - math.pow(2, i - 1)) % math.pow(2,buckets)).toInt)
         val predecessorObject = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + predecessorValue)
-        predecessorObject ! updateTable(predecessorValue, id, i)
+        predecessorObject ! updateTable(id, i)
       }
-      val fTable = fingerNode?fetchFingerTable(id).asInstanceOf[mutable.LinkedHashMap[Int, Int]]
+      val fTable = fingerNode ? fetchFingerTable(id).asInstanceOf[mutable.LinkedHashMap[Int, Int]]
       logger.info(fTable.toString)
 
 
       // predecessorValue -> n
       // nodeIndex -> s
       // i -> i
-    case updateTable(predecessorValue:Int, nodeIndex: Int, i: Int) =>
-      val fingerValue = fingerNode ? getFingerValue(nodeIndex, i)
+    case updateTable(s: Int, i: Int) =>
+      val fingerValue = fingerNode ? getFingerValue(id, i)
       val fingerValueR = Await.result(fingerValue, timeout.duration).asInstanceOf[Int]
-      if(belongs(nodeIndex, predecessorValue, fingerValueR)){
-        fingerNode ! setFingerValue(id, i, nodeIndex)
+      if(belongs(s, id, fingerValueR)){
+        fingerNode ! setFingerValue(id, i, s)
         val predecessorValue = fingerNode ? getPredecessor(id)
         val predecessorValueR = Await.result(predecessorValue, timeout.duration).asInstanceOf[Int]
         val predObj = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + predecessorValueR)
-        predObj ! updateTable(predecessor, nodeIndex, i)
+        predObj ! updateTable(s, i)
       }
 
     case loadDataServer(data: EntityDefinition) =>
@@ -181,6 +191,6 @@ object ServerActor {
   case class loadDataServer(data: EntityDefinition)
   case class findSuccessor(index: Int)
   case class updateOthers()
-  case class updateTable(predecessorValue: Int, nodeVal: Int, i: Int)
+  case class updateTable(s: Int, i: Int)
   case class getSnapshotServer()
 }

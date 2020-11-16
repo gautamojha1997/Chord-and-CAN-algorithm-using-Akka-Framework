@@ -40,7 +40,7 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
       logger.info("Sever Actor Created: " + nodeIndex)
       if(activeNodes.nonEmpty){
         serverActor ? initializeFingerTable(activeNodes.toList(0))
-        serverActor ! updateOthers()
+        //serverActor ! updateOthers()
       }
       else {
         serverActor ! initializeFirstFingerTable(nodeIndex)
