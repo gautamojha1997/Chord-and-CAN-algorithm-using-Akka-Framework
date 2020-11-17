@@ -37,6 +37,7 @@ class SimulationTest extends TestKit(ActorSystem("actorSystemTest")) with FlatSp
   "6" should "belong in range 3 to 0" in {
     val id: Int = 999
     val serverActor = new ServerActorTest(id, 15)
-    assert(serverActor.belongs(6,3,0))
+    assert(serverActor.belongs(1,3,2))
+    assert(serverActor.belongs(4,0,7))
   }
 }
