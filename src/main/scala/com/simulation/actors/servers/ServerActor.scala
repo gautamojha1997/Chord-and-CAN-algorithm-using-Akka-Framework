@@ -35,7 +35,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       val temp = ListBuffer.range(n,numNodes)
       temp.addAll(ListBuffer.range(0,successorValue))
     } else{
-        val temp = ListBuffer.range(successorValue,n)
+        val temp = ListBuffer.range(n,successorValue)
         temp
       }
     if(nodeRanges.contains(s))
@@ -90,8 +90,8 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       fingerNode ! updateFingerTable(finger_table, id)
 
     case updateOthers() =>
-      for (i <- 1 until buckets) {
-        val predecessorValue = findPredecessor(((buckets + id - math.pow(2, i - 1)) % math.pow(2,buckets)).toInt)
+      for (i <- 0 until buckets) {
+        val predecessorValue = findPredecessor(((numNodes + id - math.pow(2, i )) % numNodes).toInt)
         val predecessorObject = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + predecessorValue)
         predecessorObject ! updateTable(id, i)
       }
