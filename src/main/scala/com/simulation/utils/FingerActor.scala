@@ -3,7 +3,8 @@ package com.simulation.utils
 import java.util.ArrayList
 
 import akka.actor.Actor
-import com.simulation.utils.FingerActor.{fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, storeData, updateFingerTable}
+import com.simulation.beans.EntityDefinition
+import com.simulation.utils.FingerActor.{fetchData, fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, storeData, updateFingerTable}
 
 import scala.collection.mutable
 
@@ -12,10 +13,10 @@ class FingerActor extends Actor{
   var fingerTable = new Array[mutable.LinkedHashMap[Int, Int]](16)
   var successor = new Array[Int](16)
   var predecessor = new Array[Int](16)
-  var stockData = new Array[ArrayList[mutable.HashMap[Int, String]]](16)
+  var stockData = new Array[mutable.HashMap[Int, String]](16)
 
   override def receive: Receive = {
-    case updateFingerTable(finger: scala.collection.mutable.LinkedHashMap[Int, Int], nodeIndex: Int) =>
+    case updateFingerTable(finger: mutable.LinkedHashMap[Int, Int], nodeIndex: Int) =>
       fingerTable(nodeIndex) = finger
 
     case fetchFingerTable(nodeIndex: Int) =>
@@ -40,8 +41,18 @@ class FingerActor extends Actor{
     case setPredecessor(nodeIndex: Int, value: Int) =>
       predecessor(nodeIndex) = value
 
-    case storeData(nodeIndex: Int, dht: mutable.HashMap[Int, String]) =>
-      stockData(nodeIndex).add(dht)
+    case storeData(nodeIndex: Int, data: EntityDefinition) =>
+      if(stockData(nodeIndex) == null){
+        val dhtList = new mutable.HashMap[Int, String]()
+        stockData(nodeIndex) = dhtList
+      }
+      stockData(nodeIndex).put(data.id,data.name)
+
+
+    case fetchData(nodeIndex: Int, key: Int) =>
+      sender() ! stockData(nodeIndex).get(key)
+
+
   }
 }
 
@@ -55,5 +66,5 @@ object FingerActor {
   case class setSuccessor(nodeIndex: Int, value: Int)
   case class setPredecessor(nodeIndex: Int, value: Int)
   case class fetchData(nodeIndex: Int, key: Int)
-  case class storeData(nodeIndex: Int, dht: mutable.HashMap[Int, String])
+  case class storeData(nodeIndex: Int, dht: EntityDefinition)
 }

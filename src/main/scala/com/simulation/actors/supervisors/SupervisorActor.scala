@@ -39,7 +39,7 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
       val serverActor = system.actorOf(Props(new ServerActor(nodeIndex, numNodes)), "server_actor_" + nodeIndex)
       logger.info("Sever Actor Created: " + nodeIndex)
       if(activeNodes.nonEmpty){
-        serverActor ! initializeFingerTable(activeNodes.toList(0))
+        serverActor ! initializeFingerTable(activeNodes.head)
         serverActor ! updateOthers(activeNodes)
       }
       else {
@@ -54,8 +54,8 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
       val hash = md5(id.toString, numNodes) % numNodes
       val chosenNode = activeNodes.minAfter(hash)
       val node :Int = if(chosenNode.isEmpty) activeNodes.head else chosenNode.head
-      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + node) // (Random.nextInt(activeNodes.size)))
-      val data = serverActor ? getDataServer(id,0,hash)
+      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.head) // (Random.nextInt(activeNodes.size)))
+      val data = serverActor ? getDataServer(id,hash)
       val result = Await.result(data, timeout.duration)
       sender() ! result
     }
@@ -66,7 +66,7 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
       val hash = md5(data.id.toString, numNodes) % numNodes
 //      val node :Int = if(chosenNode.isEmpty) activeNodes.head else chosenNode.head
       val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.head)
-      val resultFuture = serverActor ? loadDataServer(data, activeNodes.toList(0), hash)
+      val resultFuture = serverActor ? loadDataServer(data, activeNodes.head, hash)
       val result = Await.result(resultFuture, timeout.duration)
       sender() ! result
     }
