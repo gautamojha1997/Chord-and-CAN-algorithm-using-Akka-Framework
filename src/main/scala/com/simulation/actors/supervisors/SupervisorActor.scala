@@ -39,15 +39,15 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
       val serverActor = system.actorOf(Props(new ServerActor(nodeIndex, numNodes)), "server_actor_" + nodeIndex)
       logger.info("Sever Actor Created: " + nodeIndex)
       if(activeNodes.nonEmpty){
+        activeNodes.add(nodeIndex)
         serverActor ? initializeFingerTable(activeNodes.toList(0))
-        serverActor ! updateOthers()
+        serverActor ! updateOthers(activeNodes.toList)
       }
       else {
+        activeNodes.add(nodeIndex)
         serverActor ! initializeFirstFingerTable(nodeIndex)
       }
       unexploredNodes -= nodeIndex
-      activeNodes.add(nodeIndex)
-      logger.info(activeNodes.toString)
 
     }
 

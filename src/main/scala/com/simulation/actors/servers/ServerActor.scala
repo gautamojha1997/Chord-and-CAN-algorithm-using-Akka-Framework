@@ -89,29 +89,20 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       logger.info("Second Instance for Node Index: " + ftableN.toString)
       fingerNode ! updateFingerTable(finger_table, id)
 
-    case updateOthers() =>
-      for (i <- 0 until buckets) {
-        val predecessorValue = findPredecessor(((numNodes + id - math.pow(2, i )) % numNodes).toInt)
-        val predecessorObject = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + predecessorValue)
-        predecessorObject ! updateTable(id, i)
+    case updateOthers(activeNodes: List[Int]) =>
+      (0 until activeNodes.size).foreach { nodeIndex =>
+        val fTable = fingerNode ? fetchFingerTable(activeNodes(nodeIndex))
+        val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]].toSeq
+        (0 until buckets).foreach({ fingerValue =>
+          if(belongs(id, fTableR(fingerValue)._1, fTableR((fingerValue+1)%buckets)._1)){
+            fingerNode ! setFingerValue(activeNodes(nodeIndex), fingerValue, id)
+          }
+        })
       }
-      val fTable = fingerNode ? fetchFingerTable(id).asInstanceOf[mutable.LinkedHashMap[Int, Int]]
-      logger.info(fTable.toString)
-
-
-      // predecessorValue -> n
-      // nodeIndex -> s
-      // i -> i
-    case updateTable(s: Int, i: Int) =>
-      val fingerValue = fingerNode ? getFingerValue(id, i)
-      val fingerValueR = Await.result(fingerValue, timeout.duration).asInstanceOf[Int]
-      if(belongs(s, id, fingerValueR)){
-        fingerNode ! setFingerValue(id, i, s)
-        val predecessorValue = fingerNode ? getPredecessor(id)
-        val predecessorValueR = Await.result(predecessorValue, timeout.duration).asInstanceOf[Int]
-        val predObj = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + predecessorValueR)
-        predObj ! updateTable(s, i)
-      }
+      (0 until activeNodes.size).foreach { nodeIndex =>
+        val fTable = fingerNode ? fetchFingerTable(activeNodes(nodeIndex))
+        val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]]
+        logger.info("Checking Values of FingerTable"+fTableR.toString)}
 
     case loadDataServer(data: EntityDefinition) =>
       logger.info("loadDataServer ServerActor")
@@ -190,7 +181,7 @@ object ServerActor {
   case class getDataServer(nodeIndex: Int, m: Int, hash:Int)
   case class loadDataServer(data: EntityDefinition)
   case class findSuccessor(index: Int)
-  case class updateOthers()
+  case class updateOthers(activeNodes: List[Int])
   case class updateTable(s: Int, i: Int)
   case class getSnapshotServer()
 }
