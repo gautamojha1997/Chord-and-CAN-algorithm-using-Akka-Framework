@@ -1,30 +1,32 @@
 package com.simulation.utils
 
+import java.util.ArrayList
+
 import akka.actor.Actor
-import com.simulation.utils.FingerActor.{fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, updateFingerTable}
+import com.simulation.utils.FingerActor.{fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, storeData, updateFingerTable}
 
 import scala.collection.mutable
 
 class FingerActor extends Actor{
 
-  var finger_table = new Array[scala.collection.mutable.LinkedHashMap[Int, Int]](16)
+  var fingerTable = new Array[mutable.LinkedHashMap[Int, Int]](16)
   var successor = new Array[Int](16)
   var predecessor = new Array[Int](16)
-
+  var stockData = new Array[ArrayList[mutable.HashMap[Int, String]]](16)
 
   override def receive: Receive = {
     case updateFingerTable(finger: scala.collection.mutable.LinkedHashMap[Int, Int], nodeIndex: Int) =>
-      finger_table(nodeIndex) = finger
+      fingerTable(nodeIndex) = finger
 
     case fetchFingerTable(nodeIndex: Int) =>
-      sender() ! finger_table(nodeIndex)
+      sender() ! fingerTable(nodeIndex)
 
     case getFingerValue(nodeIndex: Int, index: Int) =>
-      sender() ! finger_table(nodeIndex).toSeq(index)._2
+      sender() ! fingerTable(nodeIndex).toSeq(index)._2
 
     case setFingerValue(nodeIndex: Int, index: Int, value:Int) =>
-      val key = finger_table(nodeIndex).toSeq(index)._1
-      finger_table(nodeIndex).put(key, value)
+      val key = fingerTable(nodeIndex).toSeq(index)._1
+      fingerTable(nodeIndex).put(key, value)
 
     case getSuccessor(nodeIndex: Int) =>
       sender() ! successor(nodeIndex)
@@ -37,6 +39,9 @@ class FingerActor extends Actor{
 
     case setPredecessor(nodeIndex: Int, value: Int) =>
       predecessor(nodeIndex) = value
+
+    case storeData(nodeIndex: Int, dht: mutable.HashMap[Int, String]) =>
+      stockData(nodeIndex).add(dht)
   }
 }
 
@@ -49,4 +54,6 @@ object FingerActor {
   case class getPredecessor(nodeIndex: Int)
   case class setSuccessor(nodeIndex: Int, value: Int)
   case class setPredecessor(nodeIndex: Int, value: Int)
+  case class fetchData(nodeIndex: Int, key: Int)
+  case class storeData(nodeIndex: Int, dht: mutable.HashMap[Int, String])
 }

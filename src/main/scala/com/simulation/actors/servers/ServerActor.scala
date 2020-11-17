@@ -7,7 +7,7 @@ import com.simulation.actors.servers.ServerActor.{findSuccessor, getDataServer, 
 import com.simulation.beans.EntityDefinition
 import org.slf4j.{Logger, LoggerFactory}
 import com.simulation.utils.ApplicationConstants
-import com.simulation.utils.FingerActor.{fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, updateFingerTable}
+import com.simulation.utils.FingerActor.{fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, storeData, updateFingerTable}
 
 import scala.collection.mutable
 import scala.language.postfixOps
@@ -19,10 +19,8 @@ import scala.language.postfixOps
 class ServerActor(id: Int, numNodes: Int) extends Actor {
 
   val fingerNode = context.system.actorSelection("akka://actorSystem/user/finger_actor")
-  var dht = scala.collection.mutable.HashMap[Int, String]()
+  var dht = mutable.HashMap[Int, String]()
   var finger_table = scala.collection.mutable.LinkedHashMap[Int, Int]()
-  var predecessor: Int = _
-  var successor: Int = _
   val timeout = Timeout(200 seconds)
   val buckets = (Math.log(numNodes)/Math.log(2.0)).toInt
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
@@ -31,7 +29,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   def belongs(s:Int, n: Int, successorValue: Int): Boolean = {
     logger.info("Checking if "+s+ " belongs in the range "+n+" - "+successorValue)
     val nodeRanges:ListBuffer[Int] = if(n >= successorValue){
-      //check if inclusive
       val temp = ListBuffer.range(n,numNodes)
       temp.addAll(ListBuffer.range(0,successorValue))
     } else{
@@ -54,13 +51,11 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       fingerNode ! updateFingerTable(finger_table, nodeIndex)
 
     case initializeFingerTable(nodeIndex: Int) =>
-      val firstKey = ((id + math.pow(2, 0)) % math.pow(2, buckets)).toInt
+      val firstKey = ((id + math.pow(2, 0)) % numNodes).toInt
       val arbitraryNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
       logger.info(arbitraryNode.toString())
-      logger.info(finger_table.toString)
       val successorValue = arbitraryNode ? findSuccessor(firstKey)
       val firstVal = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
-      logger.info("Successor Completed: " + finger_table.toString)
       finger_table += (firstKey -> firstVal)
       fingerNode ! setSuccessor(id, firstVal)
       val newPredecessor = fingerNode ? getPredecessor(firstVal)
@@ -89,26 +84,41 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       logger.info("Second Instance for Node Index: " + ftableN.toString)
       fingerNode ! updateFingerTable(finger_table, id)
 
-    case updateOthers(activeNodes: List[Int]) =>
-      (0 until activeNodes.size).foreach { nodeIndex =>
-        val fTable = fingerNode ? fetchFingerTable(activeNodes(nodeIndex))
+
+    case updateOthers(activeNodes: mutable.TreeSet[Int]) =>
+      activeNodes.add(id)
+      val activeNodesList = activeNodes.toList
+      (0 until activeNodesList.size).foreach { nodeIndex =>
+        val fTable = fingerNode ? fetchFingerTable(activeNodesList(nodeIndex))
         val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]].toSeq
         (0 until buckets).foreach({ fingerValue =>
           if(belongs(id, fTableR(fingerValue)._1, fTableR((fingerValue+1)%buckets)._1)){
-            fingerNode ! setFingerValue(activeNodes(nodeIndex), fingerValue, id)
+            fingerNode ! setFingerValue(activeNodesList(nodeIndex), fingerValue, id)
           }
         })
       }
-      (0 until activeNodes.size).foreach { nodeIndex =>
-        val fTable = fingerNode ? fetchFingerTable(activeNodes(nodeIndex))
+      (0 until activeNodesList.size).foreach { nodeIndex =>
+        val fTable = fingerNode ? fetchFingerTable(activeNodesList(nodeIndex))
         val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]]
         logger.info("Checking Values of FingerTable"+fTableR.toString)}
 
-    case loadDataServer(data: EntityDefinition) =>
+    case loadDataServer(data: EntityDefinition, nodeIndex: Int, hash: Int) =>
       logger.info("loadDataServer ServerActor")
-      dht += (data.id -> data.name)
-      val result = "Id: "+ data.id + ", Name: " + data.name
-      sender() ! result
+      val fTable = fingerNode ? fetchFingerTable(nodeIndex)
+      val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]].toSeq
+      (0 until buckets).foreach({ fingerValue =>
+        if(hash <= fTableR(fingerValue)._2){
+          dht += (data.id -> data.name)
+          fingerNode ! storeData(id, dht)
+          val result = "Id: "+ data.id + ", Name: " + data.name
+          sender() ! result
+        }
+      })
+      val arbitraryNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + id)
+      val result = arbitraryNode ? loadDataServer(data, fTableR(buckets-1)._2, hash)
+      val resultR = Await.result(result, timeout.duration)
+      sender() ! resultR
+
 
     case getDataServer(id: Int, m: Int, hash: Int) =>
       val output = getData(id: Int, m: Int, hash: Int)
@@ -128,16 +138,18 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       sender() ! successorValueR
   }
 
-  def getData(id: Int, m: Int, hash: Int) : String = {
+  def getData(nodeIndex: Int, m: Int, hash: Int) : String = {
       if (m != buckets) {
-        val fingerTBuffer = finger_table.toSeq
-        List.tabulate(fingerTBuffer.size)(i =>
-          if (belongs(hash, fingerTBuffer(i)._1, fingerTBuffer((i + 1) % fingerTBuffer.size)._1)) {
+        val fingerTBuffer = fingerNode ? fetchFingerTable(id)
+        val fingerTBufferR = Await.result(fingerTBuffer, timeout.duration)
+          .asInstanceOf[mutable.LinkedHashMap[Int,Int]].toSeq
+        List.tabulate(fingerTBufferR.size)(i =>
+          if (belongs(hash, fingerTBufferR(i)._1, fingerTBufferR((i + 1) % fingerTBufferR.size)._1)) {
             val stockName = dht.get(id).head
             return (id + "->" + stockName)
           }
           else {
-            val successorNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + fingerTBuffer(i)._2)
+            val successorNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + fingerTBufferR(i)._2)
             successorNode ! getDataServer(id, m + 1, hash)
           })
       }
@@ -179,9 +191,9 @@ object ServerActor {
   case class initializeFingerTable(nodeIndex: Int)
   case class initializeFirstFingerTable(nodeIndex: Int)
   case class getDataServer(nodeIndex: Int, m: Int, hash:Int)
-  case class loadDataServer(data: EntityDefinition)
+  case class loadDataServer(data: EntityDefinition, nodeIndex: Int, hash: Int)
   case class findSuccessor(index: Int)
-  case class updateOthers(activeNodes: List[Int])
+  case class updateOthers(activeNodes: mutable.TreeSet[Int])
   case class updateTable(s: Int, i: Int)
   case class getSnapshotServer()
 }

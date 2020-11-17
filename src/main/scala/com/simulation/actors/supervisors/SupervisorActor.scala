@@ -39,14 +39,13 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
       val serverActor = system.actorOf(Props(new ServerActor(nodeIndex, numNodes)), "server_actor_" + nodeIndex)
       logger.info("Sever Actor Created: " + nodeIndex)
       if(activeNodes.nonEmpty){
-        activeNodes.add(nodeIndex)
-        serverActor ? initializeFingerTable(activeNodes.toList(0))
-        serverActor ! updateOthers(activeNodes.toList)
+        serverActor ! initializeFingerTable(activeNodes.toList(0))
+        serverActor ! updateOthers(activeNodes)
       }
       else {
-        activeNodes.add(nodeIndex)
         serverActor ! initializeFirstFingerTable(nodeIndex)
       }
+      activeNodes.add(nodeIndex)
       unexploredNodes -= nodeIndex
 
     }
@@ -65,13 +64,11 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
     case loadDataSupervisor(data) => {
       logger.info("In loadDataSupervisor SupevisorActor")
       val hash = md5(data.id.toString, numNodes) % numNodes
-      var chosenNode = activeNodes.minAfter(hash)
-      val node :Int = if(chosenNode.isEmpty) activeNodes.head else chosenNode.head
-      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + node)
-      val resultFuture = serverActor ? loadDataServer(data)
+//      val node :Int = if(chosenNode.isEmpty) activeNodes.head else chosenNode.head
+      val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.head)
+      val resultFuture = serverActor ? loadDataServer(data, activeNodes.toList(0), hash)
       val result = Await.result(resultFuture, timeout.duration)
       sender() ! result
-      //serverActor ! loadDataServer(data)
     }
 
     case getSnapshot() =>
