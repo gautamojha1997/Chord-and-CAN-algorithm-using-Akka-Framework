@@ -69,40 +69,44 @@ open source toolkit for designing scalable, resilient systems that span processo
 
 First Node Added : 13
 
-```INFO  [SupervisorActor]: Sever Actor Created: 13
-   INFO  [ServerActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 13)
+```
+INFO  [SupervisorActor]: Sever Actor Created: 13
+INFO  [ServerActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 13)
 ```
 
 Second Node Added : 6
 
-```INFO  [SupervisorActor]: Sever Actor Created: 6
-   INFO  [ServerActor]: ActorSelection[Anchor(akka://actorSystem/), Path(/user/server_actor_13)]
+```
+INFO  [SupervisorActor]: Sever Actor Created: 6
+INFO  [ServerActor]: ActorSelection[Anchor(akka://actorSystem/), Path(/user/server_actor_13)]
 ```
 
 2. Load Data : Using id=7 to load data at any server node
 
 
-```INFO  [WebService$]: In loadData webservice
-   INFO  [WebService$]: In loadData webservice
-   INFO  [ActorDriver$]: In loadData driver
-   INFO  [UserActor]: In loadData UserActor
-   INFO  [SupervisorActor]: In loadDataSupervisor SupevisorActor
-   INFO  [ServerActor]: Checking if 4 belongs in the range 7 - 9
-   INFO  [ServerActor]: Checking if 4 belongs in the range 8 - 11
-   INFO  [ServerActor]: Checking if 4 belongs in the range 10 - 15
-   INFO  [ServerActor]: Checking if 4 belongs in the range 14 - 8
-   INFO  [ServerActor]: Data stored at 6
+```
+INFO  [WebService$]: In loadData webservice
+INFO  [WebService$]: In loadData webservice
+INFO  [ActorDriver$]: In loadData driver
+INFO  [UserActor]: In loadData UserActor
+INFO  [SupervisorActor]: In loadDataSupervisor SupevisorActor
+INFO  [ServerActor]: Checking if 4 belongs in the range 7 - 9
+INFO  [ServerActor]: Checking if 4 belongs in the range 8 - 11
+INFO  [ServerActor]: Checking if 4 belongs in the range 10 - 15
+INFO  [ServerActor]: Checking if 4 belongs in the range 14 - 8
+INFO  [ServerActor]: Data stored at 6
 ```
 - WebService result
     - Loaded Data at 6 : ```Added: Id: 7, Name: Waiting For Forever```
 
 3. Lookup Data : Looking up data with id = 7 to check whether the data loaded at 6 can be retrieved.
 
-```INFO  [ServerActor]: Checking if 4 belongs in the range 7 - 9
-   INFO  [ServerActor]: Checking if 4 belongs in the range 8 - 11
-   INFO  [ServerActor]: Checking if 4 belongs in the range 10 - 15
-   INFO  [ServerActor]: Checking if 4 belongs in the range 14 - 8
-   INFO  [ServerActor]: Data was stored at 6  
+```
+INFO  [ServerActor]: Checking if 4 belongs in the range 7 - 9
+INFO  [ServerActor]: Checking if 4 belongs in the range 8 - 11
+INFO  [ServerActor]: Checking if 4 belongs in the range 10 - 15
+INFO  [ServerActor]: Checking if 4 belongs in the range 14 - 8
+INFO  [ServerActor]: Data was stored at 6  
 ```
 
 - WebService result
@@ -110,12 +114,13 @@ Second Node Added : 6
 
 4. Snapshot : Returns the overall Fingertable value.
 
-```INFO  [WebService$]: Snapshot Web Service
-   INFO  [ActorDriver$]: Print Snapshot Driver
-   INFO  [SupervisorActor]: Get Snapshot
-   INFO  [SupervisorActor]: LinkedHashMap(7 -> 13, 8 -> 13, 10 -> 13, 14 -> 6)
-   INFO  [SupervisorActor]: Get Snapshot
-   INFO  [SupervisorActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 6)
+```
+INFO  [WebService$]: Snapshot Web Service
+INFO  [ActorDriver$]: Print Snapshot Driver
+INFO  [SupervisorActor]: Get Snapshot
+INFO  [SupervisorActor]: LinkedHashMap(7 -> 13, 8 -> 13, 10 -> 13, 14 -> 6)
+INFO  [SupervisorActor]: Get Snapshot
+INFO  [SupervisorActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 6)
 ```
 
 - Webservice result
