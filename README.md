@@ -67,14 +67,14 @@ open source toolkit for designing scalable, resilient systems that span processo
 
 1. Adding Node : Adding the created node.
 
-First Node Added : 13
+- First Node Added : 13
 
 ```
 INFO  [SupervisorActor]: Sever Actor Created: 13
 INFO  [ServerActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 13)
 ```
 
-Second Node Added : 6
+- Second Node Added : 6
 
 ```
 INFO  [SupervisorActor]: Sever Actor Created: 6
