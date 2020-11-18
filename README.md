@@ -65,7 +65,7 @@ open source toolkit for designing scalable, resilient systems that span processo
     
 ## Results
 
-1. Adding Node : Adding the created node.
+1.Adding Node : Adding the created node.
 
 - First Node Added : 13
 
@@ -81,7 +81,7 @@ INFO  [SupervisorActor]: Sever Actor Created: 6
 INFO  [ServerActor]: ActorSelection[Anchor(akka://actorSystem/), Path(/user/server_actor_13)]
 ```
 
-2. Load Data : Using id=7 to load data at any server node
+2.Load Data : Using id=7 to load data at any server node
 
 
 ```
@@ -99,7 +99,7 @@ INFO  [ServerActor]: Data stored at 6
 - WebService result
     - Loaded Data at 6 : ```Added: Id: 7, Name: Waiting For Forever```
 
-3. Lookup Data : Looking up data with id = 7 to check whether the data loaded at 6 can be retrieved.
+3.Lookup Data : Looking up data with id = 7 to check whether the data loaded at 6 can be retrieved.
 
 ```
 INFO  [ServerActor]: Checking if 4 belongs in the range 7 - 9
@@ -112,7 +112,7 @@ INFO  [ServerActor]: Data was stored at 6
 - WebService result
     - Looking Up data at 6 : ```Lookup value: 7 Some(Waiting For Forever)```
 
-4. Snapshot : Returns the overall Fingertable value.
+4.Snapshot : Returns the overall Fingertable value.
 
 ```
 INFO  [WebService$]: Snapshot Web Service
