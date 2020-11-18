@@ -30,6 +30,7 @@ open source toolkit for designing scalable, resilient systems that span processo
         - Load Data : Clicking this button calls method loadData(id.toInt) which loads the result in the form of string in the server. To load data append ?id=<any integer> to your link.
         - Lookup Data : Clicking this button calls method getData(id.toInt) which is used by the user to look data over a server node using Chord Protocol. To look-up data append ?id=<any integer> to your link.
         - Snapshot : Clicking this button simply returns all the result for the simulation.
+        - Montecarlo : Clicking this button invokes the Rclient object to randomly select the 4 options from above.
         
 - ActorDriver
     - This object file defines the number of users, servers, ActorSystem, Actors (serverActor, userActor, supervisorActor).
@@ -63,6 +64,69 @@ open source toolkit for designing scalable, resilient systems that span processo
     - The hashing algorithm used is MD5.
     
 ## Results
+
+1. Adding Node : Adding the created node.
+
+First Node Added : 13
+
+```INFO  [SupervisorActor]: Sever Actor Created: 13
+   INFO  [ServerActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 13)
+```
+
+Second Node Added : 6
+
+```INFO  [SupervisorActor]: Sever Actor Created: 6
+   INFO  [ServerActor]: ActorSelection[Anchor(akka://actorSystem/), Path(/user/server_actor_13)]
+```
+
+2. Load Data : Using id=7 to load data at any server node
+
+
+```INFO  [WebService$]: In loadData webservice
+   INFO  [WebService$]: In loadData webservice
+   INFO  [ActorDriver$]: In loadData driver
+   INFO  [UserActor]: In loadData UserActor
+   INFO  [SupervisorActor]: In loadDataSupervisor SupevisorActor
+   INFO  [ServerActor]: Checking if 4 belongs in the range 7 - 9
+   INFO  [ServerActor]: Checking if 4 belongs in the range 8 - 11
+   INFO  [ServerActor]: Checking if 4 belongs in the range 10 - 15
+   INFO  [ServerActor]: Checking if 4 belongs in the range 14 - 8
+   INFO  [ServerActor]: Data stored at 6
+```
+- WebService result
+    - Loaded Data at 6 : ```Added: Id: 7, Name: Waiting For Forever```
+
+3. Lookup Data : Looking up data with id = 7 to check whether the data loaded at 6 can be retrieved.
+
+```INFO  [ServerActor]: Checking if 4 belongs in the range 7 - 9
+   INFO  [ServerActor]: Checking if 4 belongs in the range 8 - 11
+   INFO  [ServerActor]: Checking if 4 belongs in the range 10 - 15
+   INFO  [ServerActor]: Checking if 4 belongs in the range 14 - 8
+   INFO  [ServerActor]: Data was stored at 6  
+```
+
+- WebService result
+    - Looking Up data at 6 : ```Lookup value: 7 Some(Waiting For Forever)```
+
+4. Snapshot : Returns the overall Fingertable value.
+
+```INFO  [WebService$]: Snapshot Web Service
+   INFO  [ActorDriver$]: Print Snapshot Driver
+   INFO  [SupervisorActor]: Get Snapshot
+   INFO  [SupervisorActor]: LinkedHashMap(7 -> 13, 8 -> 13, 10 -> 13, 14 -> 6)
+   INFO  [SupervisorActor]: Get Snapshot
+   INFO  [SupervisorActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 6)
+```
+
+- Webservice result
+    - Snapshot created : ```6 -> LinkedHashMap(7 -> 13, 8 -> 13, 10 -> 13, 14 -> 6) 13 -> LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 6)```
+    
+    
+
+
+
+
+
         
         
         
