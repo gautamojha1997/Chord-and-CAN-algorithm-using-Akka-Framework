@@ -14,8 +14,8 @@ open source toolkit for designing scalable, resilient systems that span processo
 ### Instructions to run the simulations
 #### Prerequisites
 - Install [Simple Build Toolkit (SBT)](https://www.scala-sbt.org/1.x/docs/index.html)
-- Install [Cassandra](https://phoenixnap.com/kb/install-cassandra-on-windows)
-- To install Cassandra you will need Python 2.7 & Java SE Development Kit 8u251.
+- Install [Cassandra](https://cassandra.apache.org/download/)
+- To install Cassandra you will need Python 2.7 & Java SE Development Kit 8u251. Follow [link](https://phoenixnap.com/kb/install-cassandra-on-windows).
 - After installation, to enable Cassandra, set the value of the flag *enableCassandra* to *true* in the application.conf file.
 
 #### Run 
