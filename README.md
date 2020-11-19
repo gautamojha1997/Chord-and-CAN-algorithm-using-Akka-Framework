@@ -53,7 +53,7 @@ open source toolkit for designing scalable, resilient systems that span processo
         
 - UserActor
     - This class file represents actor-user and defines messages as follows:
-        - case class loadData(data:EntityDefinition) : Returns result of the loaded data from the server to the user.
+        - case class loadData(data:EntityDefinition) : Returns result of the loaded data from the server to the user. 
         - case getDataUserActor(id) : Returns result by looking up data from the server.
         - case createUserActor(id) : Returns path of created user actor.
 - SupervisorActor 
@@ -81,7 +81,7 @@ INFO  [SupervisorActor]: Sever Actor Created: 6
 INFO  [ServerActor]: ActorSelection[Anchor(akka://actorSystem/), Path(/user/server_actor_13)]
 ```
 
-2.Load Data : Using id=7 to load data at any server node
+2.Load Data : Using id=7 to load data at any server node (The id has to be passed at the end of the url as follows: ?id=7)
 
 
 ```
@@ -99,7 +99,7 @@ INFO  [ServerActor]: Data stored at 6
 - WebService result
     - Loaded Data at 6 : ```Added: Id: 7, Name: Waiting For Forever```
 
-3.Lookup Data : Looking up data with id = 7 to check whether the data loaded at 6 can be retrieved.
+3.Lookup Data : Looking up data with id = 7 to check whether the data loaded at 6 can be retrieved. (The id has to be passed at the end of the url as follows: ?id=7)
 
 ```
 INFO  [ServerActor]: Checking if 4 belongs in the range 7 - 9
@@ -126,7 +126,21 @@ INFO  [SupervisorActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 6)
 - Webservice result
     - Snapshot created : ```6 -> LinkedHashMap(7 -> 13, 8 -> 13, 10 -> 13, 14 -> 6) 13 -> LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 6)```
     
+5.MonteCarlo : Generates random requests based on the number specified. In order to introduce randomness, the eval function of the R client is used.
+
+```
+INFO  [WebService$]: Snapshot Web Service
+INFO  [ActorDriver$]: Print Snapshot Driver
+INFO  [SupervisorActor]: Get Snapshot
+INFO  [SupervisorActor]: LinkedHashMap(7 -> 13, 8 -> 13, 10 -> 13, 14 -> 6)
+INFO  [SupervisorActor]: Get Snapshot
+INFO  [SupervisorActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 6)
+```
+
+- Webservice result
+    - Snapshot created : ```3.LoadData(36): Id: 36, Name: Music and Lyrics 1.AddNode: NodeAdded 2.Snapshot: 8 -> LinkedHashMap(9 -> 9, 10 -> 9, 12 -> 13, 0 -> 8) 9 -> LinkedHashMap(10 -> 9, 11 -> 13, 13 -> 13, 1 -> 8) 13 -> LinkedHashMap(14 -> 9, 15 -> 9, 1 -> 9, 5 -> 13) 2.Snapshot: 8 -> LinkedHashMap(9 -> 9, 10 -> 9, 12 -> 13, 0 -> 8) 9 -> LinkedHashMap(10 -> 9, 11 -> 13, 13 -> 13, 1 -> 8) 13 -> LinkedHashMap(14 -> 9, 15 -> 9, 1 -> 9, 5 -> 13) 3.LoadData(64): Id: 64, Name: Dear John```
     
+
 
 
 
