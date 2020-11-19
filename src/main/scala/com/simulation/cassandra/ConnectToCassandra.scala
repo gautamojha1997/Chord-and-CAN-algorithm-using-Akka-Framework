@@ -12,12 +12,8 @@ object ConnectToCassandra {
     cluster = Cluster.builder().addContactPoint(host).withPort(port).build()
     session = cluster.connect()
 
-    var query = "DROP KEYSPACE IF EXISTS "+keyspaceName+";"
-    //Executing the query
-    session.execute(query)
-
     //Query to create a keyspace
-    query = "CREATE KEYSPACE "+keyspaceName+" WITH replication = {'class':'SimpleStrategy', 'replication_factor':3};"
+    var query = "CREATE KEYSPACE IF NOT EXISTS "+keyspaceName+" WITH replication = {'class':'SimpleStrategy', 'replication_factor':3} ;"
     session.execute(query)
 
     //Connect to the testkeyspace keyspace
@@ -37,7 +33,7 @@ object ConnectToCassandra {
     val (cluster, session) = ConnectToCassandra.setup(keyspace, "localhost", 9042)
 
     //Create table
-    val query=  "CREATE TABLE stock(id int PRIMARY KEY, name text) IF NOT EXISTS;"
+    val query=  "CREATE TABLE  IF NOT EXISTS stock(id int PRIMARY KEY, name text);"
     logger.info("Table created if it does not exist")
     session.execute(query)
   }
@@ -48,7 +44,7 @@ object ConnectToCassandra {
       val (cluster, session) = ConnectToCassandra.setup(keyspace, "localhost", 9042)
 
       //Insert data into the table
-      var query = "INSERT INTO stock (id, name) VALUES("+Data.id+","+Data.name+");"
+      var query = "INSERT INTO stock (id, name) VALUES("+Data.id+",'"+Data.name+"');"
       session.execute(query)
 
       //Retrieve data from stock table

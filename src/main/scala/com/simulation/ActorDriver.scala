@@ -11,7 +11,7 @@ import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, get
 import com.simulation.actors.users.UserActor
 import com.simulation.actors.users.UserActor.{createUserActor, getDataUserActor}
 import com.simulation.beans.EntityDefinition
-import com.simulation.utils.{Data, FingerActor}
+import com.simulation.utils.FingerActor
 import com.typesafe.config.ConfigFactory
 import org.ddahl.rscala.RClient
 import org.slf4j.{Logger, LoggerFactory}
