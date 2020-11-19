@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorSystem, Props}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
+import com.simulation.ConnectToCassandra
 import com.simulation.actors.servers.ServerActor
 import com.simulation.actors.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers}
 import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot, loadDataSupervisor}
@@ -11,6 +12,7 @@ import com.simulation.beans.EntityDefinition
 import com.simulation.utils.FingerActor.fetchFingerTable
 import com.simulation.utils.{ApplicationConstants, Data}
 import com.simulation.utils.Utility.md5
+import com.typesafe.config.ConfigFactory
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.mutable
@@ -24,13 +26,12 @@ import scala.tools.nsc.doc.model.Entity
 class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor{
 
   var nodesActorMapper: mutable.Map[Int, Int] = mutable.HashMap[Int, Int]()
-  //val system: ActorSystem = ActorSystem("actorSystem")
   val timeout = Timeout(30 seconds)
-  //check if inclusive
   val unexploredNodes = ListBuffer.range(0,numNodes)
   var activeNodes: mutable.TreeSet[Int] = new mutable.TreeSet[Int]()
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
   val fingerNode = context.system.actorSelection("akka://actorSystem/user/finger_actor")
+  val conf = ConfigFactory.load("application.conf")
 
   override def receive: Receive = {
 
@@ -53,7 +54,6 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
     case getDataSupervisor(id) => {
       val hash = md5(id.toString, numNodes) % numNodes
       val chosenNode = activeNodes.minAfter(hash)
-      val node :Int = if(chosenNode.isEmpty) activeNodes.head else chosenNode.head
       val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.head) // (Random.nextInt(activeNodes.size)))
       val data = serverActor ? getDataServer(id,hash)
       val result = Await.result(data, timeout.duration)
@@ -64,10 +64,19 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
     case loadDataSupervisor(data) => {
       logger.info("In loadDataSupervisor SupevisorActor")
       val hash = md5(data.id.toString, numNodes) % numNodes
-//      val node :Int = if(chosenNode.isEmpty) activeNodes.head else chosenNode.head
       val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.head)
       val resultFuture = serverActor ? loadDataServer(data, activeNodes.head, hash)
       val result = Await.result(resultFuture, timeout.duration)
+
+      //change the confValue to true in application.conf to have data persistence
+      //make sure to install cassandra first
+
+      if(conf.getString("enableCassandra") == true) {
+        serverActor ! ConnectToCassandra.createTable()
+        serverActor ! ConnectToCassandra.addToCassandra(data)
+      }
+
+
       sender() ! result
     }
 

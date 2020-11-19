@@ -3,11 +3,16 @@ package com.simulation.actors.users
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
+import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.alpakka.cassandra.{CassandraSessionSettings, CassandraWriteSettings}
+import akka.stream.alpakka.cassandra.scaladsl.{CassandraFlow, CassandraSession, CassandraSessionRegistry, CassandraSource}
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
+import com.datastax.driver.core.{Cluster, Session}
+import com.datastax.oss.driver.api.core.cql.{BoundStatement, PreparedStatement}
 import com.simulation.actors.supervisors.SupervisorActor.{getDataSupervisor, loadDataSupervisor}
 import com.simulation.actors.users.UserActor.{createUserActor, getDataUserActor, loadData}
 import com.simulation.beans.EntityDefinition
-import com.simulation.utils.Data
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{Await, Future}
@@ -22,6 +27,59 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
     case loadData(data) =>
       logger.info("In loadData UserActor")
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
+
+      //creating Cluster object
+//      val cluster = Cluster.builder.addContactPoint("127.0.0.1").build()
+//
+//      //Connect to the lambda_architecture keyspace
+//      val cassandraConn: Session = cluster.connect()
+//
+//      var query=  "CREATE TABLE stock(n" +
+//        "id int PRIMARY KEY,n" +
+//        "name text,n" +
+//        ");"
+
+      //cassandraConn.execute(query)
+
+//      query="INSERT INTO stock (id, name)n" +
+        "VALUES(${data.id},'${data.name});"
+
+      // cassandraConn.execute(query)
+
+//      query = "SELECT * FROM stock;"
+//stock
+      //val res = cassandraConn.execute(query)
+
+      //print(res)
+      val materializer: Materializer = ActorMaterializer.create(actorSystem)
+
+      val place = EntityDefinition(1, "hi")
+      val source = Source.single(place)
+      val statementBinder: (EntityDefinition, PreparedStatement) => BoundStatement =
+        (elemToInsert, preparedStatement) => preparedStatement.bind(elemToInsert.id, elemToInsert.name)
+
+      val sessionSettings = CassandraSessionSettings()
+
+      implicit val cassandraSession: CassandraSession = CassandraSessionRegistry.get(actorSystem).sessionFor(sessionSettings)
+//
+//      val query=  "CREATE TABLE test(n" +
+//        "id int PRIMARY KEY,n" +
+//        "name text,n" +
+//        ");";
+//      cassandraSession.executeDDL()
+//
+//      val flow = CassandraFlow.create(CassandraWriteSettings.defaults,
+//        "INSERT INTO test(id, name) VALUES (?, ?)",
+//        statementBinder)(cassandraSession)
+//
+//      val written = source.via(flow).runWith(Sink.head)(materializer)
+//      val writtenR = Await.result(written, timeout.duration)
+//      print(written)
+      val rows =
+        CassandraSource(s"SELECT * FROM test").map(_.getInt("id")).runWith(Sink.head)(materializer)
+      val rowsR =  Await.result(rows,timeout.duration)
+      print(rowsR)
+
       val nextActor = supervisorActor ? loadDataSupervisor(data)
       val result = Await.result(nextActor, timeout.duration)
       sender() ! result
@@ -43,92 +101,5 @@ object UserActor {
   case class loadData(data:EntityDefinition)
   case class getDataUserActor(id:Int)
   case class createUserActor(id:Int)
-//
-//
-//  implicit val system = ActorSystem()
-//  implicit val materializer = ActorMaterializer()
-//  // Used for Future flatMap/onComplete/Done
-//  implicit val executionContext = system.dispatcher
-//
-//  //creating Cluster object
-//  val cluster = Cluster.builder.addContactPoint("127.0.0.1").build()
-//
-//  //Connect to the lambda_architecture keyspace
-//  val cassandraConn = cluster.connect("testkeyspace")
-//
-//  def main(args: Array[String]) {
-//
-//    //Define a route with Get and POST
-//    val route: Route =
-//      get {
-//        path("getAll" ) {
-//          complete( cassandraReader("select JSON * from emp")   )
-//        }
-//      }~ post {
-//        path("insertData") {
-//          entity(as[loadData]) { emp =>
-//            val saved: Future[Done] = cassandraWriter(emp)
-//            onComplete(saved) { done => complete("Data inserted !!!n")}
-//          }
-//        }
-//      }
-//
-//    //Binding to the host and port
-//    val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
-//    println(s"Server online at http://localhost:8080/nPress Enter to stop...")
-//    StdIn.readLine() // let the server run until user presses Enter
-//
-//    bindingFuture
-//      .flatMap(_.unbind()) // trigger unbinding from the port
-//      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
-//
-//    //Close cassandra connection
-//    cluster.close()
-//
-//  }
-//
-//
-//  /**
-//   * Read the Cassandra Data and convert each Row to Employee object
-//   * @param query the query to execute
-//   * @return the list of Employee
-//   */
-//  def cassandraReader(query: String):List[loadData] = {
-//    var empList:List[loadData] = Nil
-//
-//    //Get the result set from query execution
-//    val resultSet= cassandraConn.execute(query)
-//
-//    //Get the iterator of the result set
-//    val it=resultSet.iterator()
-//    while(it.hasNext)
-//    {
-//      //Convert each row of json data to Employee object
-//      val jsonString=resultSet.one().getString(0)
-//      val jsonObj=jsonString.parseJson.convertTo[loadData]
-//
-//      //Add to empList
-//      empList=  jsonObj :: empList
-//    }
-//
-//    return empList
-//  }
-//
-//  /**
-//   * Write data into Cassandra Database
-//   * @param emp the detail of Employee
-//   * @return Future Done
-//   */
-//  def cassandraWriter(emp:loadData)={
-//
-//    //Insert data into the table if it does not exist
-//    var query="INSERT INTO emp (emp_id, emp_name, emp_city,emp_phone, emp_sal)n" +
-//      s"VALUES(${emp.emp_id},'${emp.emp_name}', '${emp.emp_city}', ${emp.emp_phone}, ${emp.emp_sal}) IF NOT EXISTS;";
-//
-//    //Execute the query
-//    cassandraConn.execute(query)
-//
-//    //return Future Done
-//    Future { Done }
-//  }
+
 }

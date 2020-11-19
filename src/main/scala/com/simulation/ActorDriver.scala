@@ -60,6 +60,7 @@ object ActorDriver {
 
   def loadData(id: Int): String = {
     logger.info("In loadData driver")
+
    // val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
     val userActorId = 1 //Random.nextInt(numUsers)
     val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)

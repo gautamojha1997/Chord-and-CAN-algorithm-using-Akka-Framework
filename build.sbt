@@ -32,6 +32,13 @@ libraryDependencies ++= Seq(
 
   "org.ddahl" %% "rscala" % "3.2.19",
 
-  "com.lightbend.akka" %% "akka-stream-alpakka-cassandra" % "2.0.2"
+  "com.lightbend.akka" %% "akka-stream-alpakka-cassandra" % "2.0.2",
+
+  "com.datastax.cassandra" % "cassandra-driver-core" % "3.10.2",
+
+  "com.codahale.metrics" % "metrics-core" % "3.0.2",
+
+//  "com.datastax.oss" % "java-driver-query-builder" % "4.9.0",
+
 
 )
