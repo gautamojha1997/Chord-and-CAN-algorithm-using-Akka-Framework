@@ -11,7 +11,7 @@ import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, get
 import com.simulation.actors.users.UserActor
 import com.simulation.actors.users.UserActor.{createUserActor, getDataUserActor}
 import com.simulation.beans.EntityDefinition
-import com.simulation.utils.{Data, FingerActor}
+import com.simulation.utils.FingerActor
 import com.typesafe.config.ConfigFactory
 import org.ddahl.rscala.RClient
 import org.slf4j.{Logger, LoggerFactory}
@@ -44,15 +44,7 @@ object ActorDriver {
   List.tabulate(numUsers)(i => userActor ! createUserActor(i))
 
   val movieData = getMoviesData
-
-
-
   var serverActorCount = 0
-  //val RClientObj = RClient()
-
-
-  /*val temp = RClientObj.eval("runif(1)")
-  logger.info("R client" + temp.toString)*/
 
   val timeout = Timeout(10 seconds)
 
@@ -67,13 +59,10 @@ object ActorDriver {
 
   def loadData(id: Int): String = {
     logger.info("In loadData driver")
-
-   // val userActorId = RClientObj.evalD0("sample(%-, 1)",numUsers).toInt
-    val userActorId = 1 //Random.nextInt(numUsers)
+    val userActorId = 1
     val dataHandlerActor = actorSystem.actorSelection("akka://actorSystem/user/user_actor/"+userActorId)
     val resultFuture  = dataHandlerActor ? UserActor.loadData(movieData(id))
     val result = Await.result(resultFuture, timeout.duration)
-    //dataHandlerActor ! UserActor.loadData(movieData(id))
     result.toString
   }
 

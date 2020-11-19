@@ -28,61 +28,8 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
      * Returns result of the loaded data from the server to the user.
      */
     case loadData(data) =>
-      logger.info("In loadData UserActor")
+      logger.info("Loading data using user actor")
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
-
-      //creating Cluster object
-//      val cluster = Cluster.builder.addContactPoint("127.0.0.1").build()
-//
-//      //Connect to the lambda_architecture keyspace
-//      val cassandraConn: Session = cluster.connect()
-//
-//      var query=  "CREATE TABLE stock(n" +
-//        "id int PRIMARY KEY,n" +
-//        "name text,n" +
-//        ");"
-
-      //cassandraConn.execute(query)
-
-//      query="INSERT INTO stock (id, name)n" +
-        "VALUES(${data.id},'${data.name});"
-
-      // cassandraConn.execute(query)
-
-//      query = "SELECT * FROM stock;"
-//stock
-      //val res = cassandraConn.execute(query)
-
-      //print(res)
-      val materializer: Materializer = ActorMaterializer.create(actorSystem)
-
-      val place = EntityDefinition(1, "hi")
-      val source = Source.single(place)
-      val statementBinder: (EntityDefinition, PreparedStatement) => BoundStatement =
-        (elemToInsert, preparedStatement) => preparedStatement.bind(elemToInsert.id, elemToInsert.name)
-
-      val sessionSettings = CassandraSessionSettings()
-
-      implicit val cassandraSession: CassandraSession = CassandraSessionRegistry.get(actorSystem).sessionFor(sessionSettings)
-//
-//      val query=  "CREATE TABLE test(n" +
-//        "id int PRIMARY KEY,n" +
-//        "name text,n" +
-//        ");";
-//      cassandraSession.executeDDL()
-//
-//      val flow = CassandraFlow.create(CassandraWriteSettings.defaults,
-//        "INSERT INTO test(id, name) VALUES (?, ?)",
-//        statementBinder)(cassandraSession)
-//
-//      val written = source.via(flow).runWith(Sink.head)(materializer)
-//      val writtenR = Await.result(written, timeout.duration)
-//      print(written)
-      val rows =
-        CassandraSource(s"SELECT * FROM test").map(_.getInt("id")).runWith(Sink.head)(materializer)
-      val rowsR =  Await.result(rows,timeout.duration)
-      print(rowsR)
-
       val nextActor = supervisorActor ? loadDataSupervisor(data)
       val result = Await.result(nextActor, timeout.duration)
       sender() ! result
@@ -91,6 +38,7 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
      * Returns result by looking up data from the server.
      */
     case getDataUserActor(id) =>
+      logger.info("Fetching data from server actor")
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
       val nextActor = supervisorActor ? getDataSupervisor(id)
       val result = Await.result(nextActor, timeout.duration)
