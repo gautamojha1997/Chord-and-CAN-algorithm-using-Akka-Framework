@@ -92,7 +92,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
         val fTable = fingerNode ? fetchFingerTable(activeNodesList(nodeIndex))
         val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]].toSeq
         (0 until buckets).foreach({ fingerValue =>
-          if(belongs(id, fTableR(fingerValue)._1, fTableR((fingerValue+1)%buckets)._1)){
+          if(belongs(id, fTableR(fingerValue)._1, fTableR((fingerValue+1)%buckets)._1+1)){
             fingerNode ! setFingerValue(activeNodesList(nodeIndex), fingerValue, id)
           }
         })

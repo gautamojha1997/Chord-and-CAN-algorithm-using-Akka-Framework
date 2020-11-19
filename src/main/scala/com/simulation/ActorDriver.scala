@@ -45,7 +45,11 @@ object ActorDriver {
 
 
   var serverActorCount = 0
- // val RClientObj = RClient()
+  //val RClientObj = RClient()
+
+
+  /*val temp = RClientObj.eval("runif(1)")
+  logger.info("R client" + temp.toString)*/
 
   val timeout = Timeout(10 seconds)
 
