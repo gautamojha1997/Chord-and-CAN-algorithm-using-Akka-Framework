@@ -88,7 +88,8 @@ Apache Cassandra is a free and open-source, distributed, wide column store, NoSQ
 - Utility 
     - This object file takes a string and number of bits to return hashed value used for generating keys inserted into DHT and for data units.
     - The hashing algorithm used is MD5.
-    
+- Data.csv
+    - Represents the movie data in id & name format.     
 ## Results
 
 1.Adding Node : Adding the created node.
@@ -210,7 +211,16 @@ INFO  [WebService$]: 1.AddNode: NodeAdded
 - Webservice result
     - MonteCarlo result : ```1.AddNode: NodeAdded 3.LoadData(49): Id: 49, Name: Knocked Up 1.AddNode: NodeAdded 3.LoadData(34): Id: 34, Name: New Year's Eve 1.AddNode: NodeAdded```
     
-
+- 6 Cassandra logs 
+```
+  INFO  [Cluster]: New Cassandra host localhost/127.0.0.1:9042 added
+  INFO  [ActorDriver$]: Table created if it does not exist
+  INFO  [ClockFactory]: Using java.lang.System clock to generate timestamps.
+  INFO  [DCAwareRoundRobinPolicy]: Using data-center name 'datacenter1' for DCAwareRoundRobinPolicy (if this is incorrect, please provide the correct datacenter name with DCAwareRoundRobinPolicy constructor)
+  INFO  [Cluster]: New Cassandra host localhost/127.0.0.1:9042 added
+  INFO  [ActorDriver$]: Column definition: Columns[id(int), name(varchar)]
+  INFO  [ActorDriver$]: Fetching the stored data from Cassandra: [Row[43, Love Happens], Row[4, Water For Elephants], Row[7, Waiting For Forever], Row[57, Good Luck Chuck], Row[56, Dear John]]
+```
 
 
 
