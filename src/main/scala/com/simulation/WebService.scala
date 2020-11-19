@@ -111,8 +111,9 @@ object WebService {
               number =>
                 val toPrint = new StringBuilder()
                 List.tabulate(number.toInt)(x => {
-                  logger.info(x.toString)
+                  //logger.info(x.toString)
                   val choice = rClient.evalI0("runif(%-, %-, %-)", 1, 1, 5)
+                  logger.info("choice = "+ choice.toString)
                   if(choice == 1){
                     //toPrint += "\n" + "1.AddNode: "
                     toPrint.append("1.AddNode: ")

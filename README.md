@@ -36,7 +36,7 @@ open source toolkit for designing scalable, resilient systems that span processo
         - Load Data : Clicking this button calls method loadData(id.toInt) which loads the result in the form of string in the server. To load data append ?id=<any integer> to your link.
         - Lookup Data : Clicking this button calls method getData(id.toInt) which is used by the user to look data over a server node using Chord Protocol. To look-up data append ?id=<any integer> to your link.
         - Snapshot : Clicking this button simply returns all the result for the simulation.
-        - Montecarlo : Clicking this button invokes the Rclient object to randomly select the 4 options from above.
+        - Montecarlo : Clicking this button invokes the Rclient object to randomly select the 4 options from above. The 4 options are generated randomly and they are : 1.AddNode, 2.Snapshot, 3.LoadData, 4.LookupData. To use Monte-Carlo append ?number=<any integer> to your link.
         
 - ActorDriver
     - This object file defines the number of users, servers, ActorSystem, Actors (serverActor, userActor, supervisorActor).
@@ -134,17 +134,60 @@ INFO  [SupervisorActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 6)
     
 5.MonteCarlo : Generates random requests based on the number specified. In order to introduce randomness, the eval function of the R client is used.
 
+Here we have used numbers = 5.
+- First choice is 1.AddNode, thus a server actor is created at 0 as below:
 ```
-INFO  [WebService$]: Snapshot Web Service
-INFO  [ActorDriver$]: Print Snapshot Driver
-INFO  [SupervisorActor]: Get Snapshot
-INFO  [SupervisorActor]: LinkedHashMap(7 -> 13, 8 -> 13, 10 -> 13, 14 -> 6)
-INFO  [SupervisorActor]: Get Snapshot
-INFO  [SupervisorActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 6)
+INFO  [WebService$]: choice = 1
+INFO  [Slf4jLogger]: Slf4jLogger started
+INFO  [SupervisorActor]: Sever Actor Created: 0
+INFO  [ServerActor]: LinkedHashMap(1 -> 0, 2 -> 0, 4 -> 0, 8 -> 0)
+```
+
+- Second choice is 3.LoadData with id=49 is loaded as below and stored at 0:
+```
+INFO  [WebService$]: choice = 3
+INFO  [ActorDriver$]: In loadData driver
+INFO  [UserActor]: In loadData UserActor
+INFO  [SupervisorActor]: In loadDataSupervisor SupevisorActor
+INFO  [ServerActor]: Checking if 7 belongs in the range 1 - 3
+INFO  [ServerActor]: Checking if 7 belongs in the range 2 - 5
+INFO  [ServerActor]: Checking if 7 belongs in the range 4 - 9
+INFO  [ServerActor]: Data stored at 0
+```
+
+- Third choice is 1.AddNode, thus a server actor is created at 10 as belows:
+```
+INFO  [WebService$]: choice = 1
+INFO  [SupervisorActor]: Sever Actor Created: 10
+```
+
+- Fourth choice is 3.LoadData with id = 34 is loaded as below and stored at 0:
+```
+INFO  [WebService$]: choice = 3
+INFO  [ActorDriver$]: In loadData driver
+INFO  [UserActor]: In loadData UserActor
+INFO  [ServerActor]: Data stored at 0
+```
+
+- Fifth choice is 1.AddNode, thus a server actor is created at 5 as belows:
+```
+INFO  [WebService$]: choice = 1
+INFO  [ServerActor]: Successor Found, value = 0
+INFO  [ServerActor]: Second Instance: LinkedHashMap(11 -> 0, 12 -> 0, 14 -> 0, 2 -> 0)
+INFO  [SupervisorActor]: Sever Actor Created: 5
+```
+
+- Finally this is how the overall result is for numbers=5
+```
+INFO  [WebService$]: 1.AddNode: NodeAdded
+3.LoadData(49): Id: 49, Name: Knocked Up
+1.AddNode: NodeAdded
+3.LoadData(34): Id: 34, Name: New Year's Eve
+1.AddNode: NodeAdded
 ```
 
 - Webservice result
-    - Snapshot created : ```3.LoadData(36): Id: 36, Name: Music and Lyrics 1.AddNode: NodeAdded 2.Snapshot: 8 -> LinkedHashMap(9 -> 9, 10 -> 9, 12 -> 13, 0 -> 8) 9 -> LinkedHashMap(10 -> 9, 11 -> 13, 13 -> 13, 1 -> 8) 13 -> LinkedHashMap(14 -> 9, 15 -> 9, 1 -> 9, 5 -> 13) 2.Snapshot: 8 -> LinkedHashMap(9 -> 9, 10 -> 9, 12 -> 13, 0 -> 8) 9 -> LinkedHashMap(10 -> 9, 11 -> 13, 13 -> 13, 1 -> 8) 13 -> LinkedHashMap(14 -> 9, 15 -> 9, 1 -> 9, 5 -> 13) 3.LoadData(64): Id: 64, Name: Dear John```
+    - MonteCarlo result : ```1.AddNode: NodeAdded 3.LoadData(49): Id: 49, Name: Knocked Up 1.AddNode: NodeAdded 3.LoadData(34): Id: 34, Name: New Year's Eve 1.AddNode: NodeAdded```
     
 
 
