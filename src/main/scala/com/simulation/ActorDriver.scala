@@ -22,6 +22,9 @@ import scala.concurrent.duration.DurationInt
 import scala.io.Source
 import scala.util.Random
 
+/**
+ * As the name suggests, routes the requests to the appropriate services.
+ */
 object ActorDriver {
 
   private val conf = ConfigFactory.load("application.conf")

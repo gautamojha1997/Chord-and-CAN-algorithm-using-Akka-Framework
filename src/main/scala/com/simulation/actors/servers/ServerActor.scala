@@ -25,7 +25,13 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
   var dht = mutable.HashMap[Int, String]()
 
-  // Check if s belongs from n to fingerIthEntry
+  /**
+   * Check if s belongs from n to successorValue
+   * @param s
+   * @param n
+   * @param successorValue
+   * @return s belongs or not
+   */
   def belongs(s:Int, n: Int, successorValue: Int): Boolean = {
     logger.info("Checking if "+s+ " belongs in the range "+n+" - "+successorValue)
     val nodeRanges:ListBuffer[Int] = if(n >= successorValue){
@@ -42,6 +48,9 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
 
   override def receive = {
 
+    /**
+     * It initializes the first finger table for the first server-node.
+     */
     case initializeFirstFingerTable(nodeIndex: Int) =>
       List.tabulate(buckets)(x => finger_table +=
         (((nodeIndex + math.pow(2, x)) % math.pow(2, buckets)).toInt -> nodeIndex))
@@ -50,6 +59,9 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       fingerNode ! setSuccessor(nodeIndex, nodeIndex)
       fingerNode ! updateFingerTable(finger_table, nodeIndex)
 
+    /**
+     * It initializes the finger table for all the server nodes after the first one.
+     */
     case initializeFingerTable(nodeIndex: Int) =>
       val firstKey = ((id + math.pow(2, 0)) % numNodes).toInt
       val arbitraryNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
@@ -85,6 +97,9 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       fingerNode ! updateFingerTable(finger_table, id)
 
 
+    /**
+     * It updates all nodes whose finger table should refer to the new node which joins the network.
+     */
     case updateOthers(activeNodes: mutable.TreeSet[Int]) =>
       activeNodes.add(id)
       val activeNodesList = activeNodes.toList
@@ -102,9 +117,15 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
         val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]]
         logger.info("Checking Values of FingerTable"+fTableR.toString)}
 
+    /**
+     * Loads data to the server
+     */
     case loadDataServer(data: EntityDefinition, nodeIndex: Int, hash: Int) =>
       sender() ! loadData(data: EntityDefinition, nodeIndex: Int, hash: Int)
 
+    /**
+     * Gets data from the server
+     */
     case getDataServer(id: Int, hash: Int) =>
       val output = getData(id, hash)
       sender() ! output
@@ -113,6 +134,9 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       logger.info("In getsnapshot server")
       sender() ! finger_table
 
+    /**
+     * Returns successor value for the given node by fetching successor value for an arbitrary node and eventually updating the successor value for the given node.
+     */
     case findSuccessor(nodeIndex: Int) =>
       logger.info("In find successor, node index = " + nodeIndex + " id = " + id)
       val arbitraryNode: Int = findPredecessor(nodeIndex)
@@ -123,6 +147,13 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       sender() ! successorValueR
   }
 
+  /**
+   * Contains the main logic of loading the data
+   * @param data
+   * @param nodeIndex
+   * @param hash
+   * @return
+   */
   def loadData(data: EntityDefinition, nodeIndex: Int, hash: Int): String = {
     var result = ""
     val fTable = fingerNode ? fetchFingerTable(id)
@@ -143,7 +174,12 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     result
   }
 
-
+  /**
+   * Contains the main logic of getting the data
+   * @param nodeIndex
+   * @param hash
+   * @return
+   */
   def getData(nodeIndex: Int, hash: Int) : String = {
     var stockNameR = ""
     val fTable = fingerNode ? fetchFingerTable(id)
@@ -163,6 +199,11 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     nodeIndex+" "+stockNameR
   }
 
+  /**
+   * Returns predecessor value for the given node by invoking another method closestPrecedingFinger(nodeIndex: Int) which returns finger table value for the given node.
+   * @param nodeIndex
+   * @return
+   */
   def findPredecessor(nodeIndex: Int): Int ={
     logger.info("In find predecessor, node index = "+nodeIndex+" id = "+id)
     var arbitraryNode = id
@@ -176,6 +217,11 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     arbitraryNode
   }
 
+  /**
+   * Finds the closest preceding finger entry for the given nodeIndex
+   * @param nodeIndex
+   * @return
+   */
   def closestPrecedingFinger(nodeIndex: Int): Int = {
     var closestIndex = id
     for (i <- (0 until buckets).reverse) {

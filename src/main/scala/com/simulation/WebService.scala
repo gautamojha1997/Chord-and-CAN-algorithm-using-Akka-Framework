@@ -38,6 +38,7 @@ object WebService {
                   "<form action=\"http://localhost:8080/montecarlo\">\n    <input type=\"submit\" value=\"montecarlo\" />\n</form>"))
           },
 
+          // If this path is received, createServerNode() is called which adds a node.
           path("addNode"){
             val result = ActorDriver.createServerNode()
             if(result){
@@ -53,6 +54,7 @@ object WebService {
               ))
           },
 
+          // If this path is received, simply returns the results for the simulation.
           path("snapshot"){
             logger.info("Snapshot Web Service")
             if(nodeAdded){
@@ -68,6 +70,7 @@ object WebService {
             }
           },
 
+          // If this path is received, loadData(id.toInt) is called which loads the result in the form of string in the server.
           path("loadData"){
             logger.info("In loadData webservice")
             parameters("id"){
@@ -87,6 +90,7 @@ object WebService {
             }
           },
 
+          // If this path is received, getData(id.toInt) is called which is used by the user to look data over a server node.
           path("lookup"){
             parameters("id"){
               id =>
@@ -105,6 +109,7 @@ object WebService {
             }
           },
 
+          // If this path is received, Rclient object is invoked to randomly select the above 4 options
           path("montecarlo"){
             val idList = new ListBuffer[Int]()
             parameters("number"){

@@ -24,6 +24,9 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
   val timeout = Timeout(15 seconds)
   override def receive: Receive = {
 
+    /**
+     * Returns result of the loaded data from the server to the user.
+     */
     case loadData(data) =>
       logger.info("In loadData UserActor")
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
@@ -84,12 +87,18 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
       val result = Await.result(nextActor, timeout.duration)
       sender() ! result
 
+    /**
+     * Returns result by looking up data from the server.
+     */
     case getDataUserActor(id) =>
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
       val nextActor = supervisorActor ? getDataSupervisor(id)
       val result = Await.result(nextActor, timeout.duration)
       sender() ! result
 
+    /**
+     * Returns path of created user actor.
+     */
     case createUserActor(id) =>
       val userActor = context.actorOf(Props(new UserActor(id, actorSystem)), "" + id)
       sender() ! userActor.path
