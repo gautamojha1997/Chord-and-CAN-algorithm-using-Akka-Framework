@@ -44,7 +44,7 @@ object ConnectToCassandra {
       val (cluster, session) = ConnectToCassandra.setup(keyspace, "localhost", 9042)
 
       //Insert data into the table
-      var query = "INSERT INTO movie (id, name) VALUES("+Data.id+","+Data.name+");"
+      var query = "INSERT INTO movie (id, name) VALUES("+Data.id+",'"+Data.name+"');"
       session.execute(query)
 
       //Retrieve data from movie table
@@ -56,7 +56,6 @@ object ConnectToCassandra {
     }
     finally {
       ConnectToCassandra.close()
-      println("Done!")
     }
   }
 }
