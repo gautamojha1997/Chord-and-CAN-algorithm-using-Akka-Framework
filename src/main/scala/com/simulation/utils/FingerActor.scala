@@ -1,11 +1,8 @@
 package com.simulation.utils
 
-import java.util.ArrayList
-
 import akka.actor.Actor
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.FingerActor.{fetchData, fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, storeData, updateFingerTable}
-
 import scala.collection.mutable
 
 class FingerActor extends Actor{
@@ -13,7 +10,7 @@ class FingerActor extends Actor{
   var fingerTable = new Array[mutable.LinkedHashMap[Int, Int]](16)
   var successor = new Array[Int](16)
   var predecessor = new Array[Int](16)
-  var stockData = new Array[mutable.HashMap[Int, String]](16)
+  var movieData = new Array[mutable.HashMap[Int, String]](16)
 
   override def receive: Receive = {
     case updateFingerTable(finger: mutable.LinkedHashMap[Int, Int], nodeIndex: Int) =>
@@ -42,15 +39,15 @@ class FingerActor extends Actor{
       predecessor(nodeIndex) = value
 
     case storeData(nodeIndex: Int, data: EntityDefinition) =>
-      if(stockData(nodeIndex) == null){
+      if(movieData(nodeIndex) == null){
         val dhtList = new mutable.HashMap[Int, String]()
-        stockData(nodeIndex) = dhtList
+        movieData(nodeIndex) = dhtList
       }
-      stockData(nodeIndex).put(data.id,data.name)
+      movieData(nodeIndex).put(data.id,data.name)
 
 
     case fetchData(nodeIndex: Int, key: Int) =>
-      sender() ! stockData(nodeIndex).get(key)
+      sender() ! movieData(nodeIndex).get(key)
 
 
   }

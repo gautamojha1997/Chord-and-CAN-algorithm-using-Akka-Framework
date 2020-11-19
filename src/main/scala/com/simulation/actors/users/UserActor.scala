@@ -25,13 +25,14 @@ class UserActor(userId: Int, actorSystem: ActorSystem) extends Actor{
   override def receive: Receive = {
 
     case loadData(data) =>
-      logger.info("In loadData UserActor")
+      logger.info("Loading data using user actor")
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
       val nextActor = supervisorActor ? loadDataSupervisor(data)
       val result = Await.result(nextActor, timeout.duration)
       sender() ! result
 
     case getDataUserActor(id) =>
+      logger.info("Fetching data from server actor")
       val supervisorActor = actorSystem.actorSelection("akka://actorSystem/user/supervisor_actor")
       val nextActor = supervisorActor ? getDataSupervisor(id)
       val result = Await.result(nextActor, timeout.duration)

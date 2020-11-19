@@ -33,7 +33,7 @@ object ConnectToCassandra {
     val (cluster, session) = ConnectToCassandra.setup(keyspace, "localhost", 9042)
 
     //Create table
-    val query=  "CREATE TABLE  IF NOT EXISTS stock(id int PRIMARY KEY, name text);"
+    val query=  "CREATE TABLE  IF NOT EXISTS movie(id int PRIMARY KEY, name text);"
     logger.info("Table created if it does not exist")
     session.execute(query)
   }
@@ -44,11 +44,11 @@ object ConnectToCassandra {
       val (cluster, session) = ConnectToCassandra.setup(keyspace, "localhost", 9042)
 
       //Insert data into the table
-      var query = "INSERT INTO stock (id, name) VALUES("+Data.id+",'"+Data.name+"');"
+      var query = "INSERT INTO movie (id, name) VALUES("+Data.id+","+Data.name+");"
       session.execute(query)
 
-      //Retrieve data from stock table
-      query = "SELECT * FROM stock;"
+      //Retrieve data from movie table
+      query = "SELECT * FROM movie;"
       val result = session.execute(query)
       logger.info("Column definition: " + result.getColumnDefinitions.toString)
       logger.info("Fetching the stored data from Cassandra: " + result.all)

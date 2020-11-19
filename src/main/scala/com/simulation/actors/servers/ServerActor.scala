@@ -79,9 +79,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
         }
       })
       logger.info("Second Instance: " + finger_table.toString)
-      val ftable = fingerNode ? fetchFingerTable(nodeIndex)
-      val ftableN  = Await.result(ftable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]]
-      logger.info("Second Instance for Node Index: " + ftableN.toString)
       fingerNode ! updateFingerTable(finger_table, id)
 
 
@@ -96,11 +93,8 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
             fingerNode ! setFingerValue(activeNodesList(nodeIndex), fingerValue, id)
           }
         })
+        logger.info("Checking Values of FingerTable"+fTableR.toString)
       }
-      (0 until activeNodesList.size).foreach { nodeIndex =>
-        val fTable = fingerNode ? fetchFingerTable(activeNodesList(nodeIndex))
-        val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]]
-        logger.info("Checking Values of FingerTable"+fTableR.toString)}
 
     case loadDataServer(data: EntityDefinition, nodeIndex: Int, hash: Int) =>
       sender() ! loadData(data: EntityDefinition, nodeIndex: Int, hash: Int)
@@ -129,13 +123,11 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]].toSeq
     (0 until buckets).foreach({ fingerValue =>
       if(belongs(hash, fTableR(fingerValue)._1, fTableR((fingerValue+1)%buckets)._1+1)){
-//        if(hash <= fTableR(fingerValue)._2 || !belongs(fTableR(fingerValue)._2, fTableR(fingerValue)._1, fTableR((fingerValue+1)%buckets)._1+1)) {
-          logger.info("Data stored at " + fTableR(fingerValue)._2)
-          dht += (data.id -> data.name)
-          fingerNode ! storeData(fTableR(fingerValue)._2, data)
-          result = "Id: " + data.id + ", Name: " + data.name
-          return result
-//        }
+        logger.info("Data stored at " + fTableR(fingerValue)._2)
+        dht += (data.id -> data.name)
+        fingerNode ! storeData(fTableR(fingerValue)._2, data)
+        result = "Id: " + data.id + ", Name: " + data.name
+        return result
       }
     })
     if(result == "")
@@ -145,22 +137,20 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
 
 
   def getData(nodeIndex: Int, hash: Int) : String = {
-    var stockNameR = ""
+    var movieNameR = ""
     val fTable = fingerNode ? fetchFingerTable(id)
     val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]].toSeq
     (0 until buckets).foreach({ fingerValue =>
       if(belongs(hash, fTableR(fingerValue)._1, fTableR((fingerValue+1)%buckets)._1+1)){
-        //if(hash <= fTableR(fingerValue)._2 || !belongs(fTableR(fingerValue)._2, fTableR(fingerValue)._1, fTableR((fingerValue+1)%buckets)._1+1)) {
-          val stockName = fingerNode ? fetchData(fTableR(fingerValue)._2, nodeIndex)
-          stockNameR = Await.result(stockName, timeout.duration).toString
-          logger.info("Data was stored at " + fTableR(fingerValue)._2)
-          return nodeIndex+" "+stockNameR
-        //}
+        val movieName = fingerNode ? fetchData(fTableR(fingerValue)._2, nodeIndex)
+        movieNameR = Await.result(movieName, timeout.duration).toString
+        logger.info("Data was stored at " + fTableR(fingerValue)._2)
+        return nodeIndex+" "+movieNameR
       }
     })
-    if(stockNameR == "")
-      stockNameR = getData(fTableR(buckets-1)._2, hash)
-    nodeIndex+" "+stockNameR
+    if(movieNameR == "")
+      movieNameR = getData(fTableR(buckets-1)._2, hash)
+    nodeIndex+" "+movieNameR
   }
 
   def findPredecessor(nodeIndex: Int): Int ={
@@ -168,7 +158,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     var arbitraryNode = id
     val successorValue = fingerNode ? getSuccessor(arbitraryNode)
     val successorValueR = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
-    logger.info("In find predecessor, successor node value = "+ successorValueR)
     while(!belongs(nodeIndex, arbitraryNode , successorValueR)){
       arbitraryNode =  closestPrecedingFinger(nodeIndex)
     }
@@ -190,8 +179,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     logger.info("Found closest preceding finger, value = " + id)
     closestIndex
   }
-
-
 }
 
 object ServerActor {

@@ -72,7 +72,7 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
       //change the confValue to true in application.conf to have data persistence
       //make sure to install cassandra first
 
-      if(conf.getBoolean("enableCassandra") == true) {
+      if(conf.getBoolean("enableCassandra")) {
         serverActor ! ConnectToCassandra.createTable()
         serverActor ! ConnectToCassandra.addToCassandra(data)
       }
