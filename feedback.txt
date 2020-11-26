@@ -1,0 +1,13 @@
+Hi group 6.
+
+Good job on your simulation!
+
+Your grade for HW3 is 24%.
+
+Comments:
++3% for the usage of typed Behaviors model for Akka actors.
++3% for a documenting your implementation and execution steps.
++5% for persisting your actor states using Cassandra
++3% for using a client of R to randomize look up, add node, snapshotting and load data operations.
+
+Abhijeet Mohanty
