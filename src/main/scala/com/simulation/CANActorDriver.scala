@@ -3,8 +3,10 @@ package com.simulation
 import akka.actor.{ActorSystem, Props}
 import akka.util.Timeout
 import com.simulation.actors.can.BootstrapActor
+import com.simulation.actors.can.BootstrapActor.createServerActorCAN
 import com.typesafe.config.ConfigFactory
 import org.slf4j.{Logger, LoggerFactory}
+
 import scala.concurrent.duration.DurationInt
 
 object CANActorDriver {
@@ -23,6 +25,7 @@ object CANActorDriver {
 
   def createServerNodeCAN(): Boolean = {
     if(numNodes > serverActorCount) {
+      bootstrapActor ! createServerActorCAN()
       serverActorCount += 1
       return true
     }
