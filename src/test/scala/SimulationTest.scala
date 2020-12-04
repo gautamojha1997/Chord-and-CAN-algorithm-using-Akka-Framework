@@ -1,7 +1,7 @@
 import UtilityTest.md5
 import akka.actor.{ActorPath, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
-import com.simulation.actors.supervisors.SupervisorActor
+import com.simulation.actors.chord.supervisors.SupervisorActor
 import com.simulation.beans.EntityDefinition
 import org.scalatest.{BeforeAndAfter, FlatSpecLike, MustMatchers, stats}
 

@@ -2,7 +2,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.simulation.ActorDriver
+import com.simulation.ChordActorDriver
 import org.scalatest.{Matchers, WordSpec}
 
 class WebServiceTest extends WordSpec with ScalatestRouteTest with Matchers {
@@ -27,7 +27,7 @@ class WebServiceTest extends WordSpec with ScalatestRouteTest with Matchers {
       },
 
       path("addNode"){
-        val result = ActorDriver.createServerNode()
+        val result = ChordActorDriver.createServerNode()
         if(result)
           complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
             "Node added"
@@ -39,14 +39,14 @@ class WebServiceTest extends WordSpec with ScalatestRouteTest with Matchers {
       },
 
       path("loadData"){
-        val result = ActorDriver.loadData(1)
+        val result = ChordActorDriver.loadData(1)
         complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
           "Added: " + result
         ))
       },
 
       path("lookup"){
-        val result = ActorDriver.getData(1)
+        val result = ChordActorDriver.getData(1)
         complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
           "Lookup value: " + result
         ))
