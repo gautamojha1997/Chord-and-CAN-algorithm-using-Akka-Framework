@@ -7,8 +7,6 @@ import com.simulation.actors.can.BootstrapActor.createServerActorCAN
 import com.typesafe.config.ConfigFactory
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.duration.DurationInt
-
 object CANActorDriver {
 
   private val conf = ConfigFactory.load("application.conf")
@@ -20,7 +18,6 @@ object CANActorDriver {
 
   val bootstrapActor = actorSystem.actorOf(Props(new BootstrapActor()),"bootstrap_actor")
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
-
   var serverActorCount = 0
 
   def createServerNodeCAN(): Boolean = {
