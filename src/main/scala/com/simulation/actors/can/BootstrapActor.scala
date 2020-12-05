@@ -18,10 +18,22 @@ class BootstrapActor extends Actor {
   override def receive: Receive = {
 
     case createServerActorCAN() => {
-      if(activeNodes==0){
+      if(activeNodes.size==0){
         activeNodes += Coordinates(0.0,1.0,0.0,1.0)
+      }else {
+        val nodeIndex = Random.nextInt(activeNodes.size)
+        logger.info("Node being split =>",nodeIndex)
+        val node: Coordinates = activeNodes(nodeIndex)
+        val xdiff = Math.abs(node.x2 - node.x1)/2
+        val ydiff = Math.abs(node.y2 - node.y1)/2
+        if(xdiff>ydiff){
+          activeNodes(nodeIndex) = Coordinates(node.x1, node.x2 - xdiff, node.y1, node.y2)
+          activeNodes += Coordinates(node.x1 + xdiff, node.x2, node.y1, node.y2)
+        } else {
+          activeNodes(nodeIndex) = Coordinates(node.x1, node.x2, node.y1, node.y2 - ydiff)
+          activeNodes += Coordinates(node.x1, node.x2, node.y1 + ydiff, node.y2)
+        }
       }
-      val node :Coordinates = activeNodes(Random.nextInt(activeNodes.size))
     }
     case getCanNodes() => {
       sender() ! activeNodes
