@@ -28,7 +28,7 @@ class WebServiceTest extends WordSpec with ScalatestRouteTest with Matchers {
 
       path("addNode"){
         val result = ActorDriver.createServerNode()
-        if(result)
+        if(result == -1)
           complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
             "Node added"
           ))
