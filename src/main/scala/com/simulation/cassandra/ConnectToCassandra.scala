@@ -1,7 +1,7 @@
 package com.simulation
 
 import com.datastax.driver.core.{Cluster, Session}
-import com.simulation.ActorDriver.logger
+import com.simulation.ChordActorDriver.logger
 import com.simulation.beans.EntityDefinition
 
 object ConnectToCassandra {

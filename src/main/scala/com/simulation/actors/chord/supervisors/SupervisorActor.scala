@@ -1,13 +1,13 @@
-package com.simulation.actors.supervisors
+package com.simulation.actors.chord.supervisors
 
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.ConnectToCassandra
-import com.simulation.actors.servers.ServerActor
-import com.simulation.actors.servers.ServerActor.{getDataServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, removeNodeServer, updateOthers}
-import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot, loadDataSupervisor, removeNodeSupervisor}
+import com.simulation.actors.chord.servers.ServerActor
+import com.simulation.actors.chord.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, removeNodeServer, updateOthers}
+import com.simulation.actors.chord.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot, loadDataSupervisor, removeNodeSupervisor}
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.FingerActor.fetchFingerTable
 import com.simulation.utils.ApplicationConstants
