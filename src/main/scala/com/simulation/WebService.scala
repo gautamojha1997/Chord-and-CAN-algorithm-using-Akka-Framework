@@ -47,7 +47,10 @@ object WebService {
                 "<form action=\"http://localhost:8080/loadData\">\n    <input type=\"submit\" value=\"Load Data\" />\n</form>" +
                 "<form action=\"http://localhost:8080/lookup\">\n    <input type=\"submit\" value=\"Lookup Data\" />\n</form>" +
                 "<form action=\"http://localhost:8080/snapshot\">\n    <input type=\"submit\" value=\"Snapshot\" />\n</form>" +
-                  "<form action=\"http://localhost:8080/montecarlo\">\n    <input type=\"submit\" value=\"montecarlo\" />\n</form>"))
+                "<form action=\"http://localhost:8080/removeNode\">\n    <input type=\"submit\" value=\"Remove Node\" />\n</form>" +
+                "<form action=\"http://localhost:8080/montecarlo\">\n    <input type=\"submit\" value=\"montecarlo\" />\n</form>"
+
+            ))
           },
 
           path("addNodeCAN"){
@@ -140,10 +143,10 @@ object WebService {
           // If this path is received, createServerNode() is called which adds a node.
           path("addNode"){
             val result = ChordActorDriver.createServerNode()
-            if(result){
+            if(result != -1){
               nodeAdded = true
               complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
-                "Node added"
+                "Node added: " + result
 
               ))
             }
@@ -208,6 +211,26 @@ object WebService {
             }
           },
 
+          path("removeNode"){
+            logger.info("In removeNode webservice")
+            parameters("id"){
+              (id) =>
+                if(nodeAdded){
+                  val result = ChordActorDriver.removeNode(id.toInt)
+                  if(result)
+                    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Node removed: " + id))
+                  else
+                    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Node not present: " + id))
+                }
+                else{
+                  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                    "Please add a node first"
+                  ))
+                }
+
+            }
+          },
+
           // If this path is received, Rclient object is invoked to randomly select the above 4 options
           path("montecarlo"){
             val idList = new ListBuffer[Int]()
@@ -219,7 +242,7 @@ object WebService {
                   logger.info("choice = "+ choice.toString)
                   if(choice == 1){
                     toPrint.append("1.AddNode: ")
-                    if(ChordActorDriver.createServerNode()) {
+                    if(ChordActorDriver.createServerNode() != -1) {
                       toPrint.append("NodeAdded")
                       monteNodeAdded = true
                     }

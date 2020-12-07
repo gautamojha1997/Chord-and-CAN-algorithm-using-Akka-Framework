@@ -7,7 +7,7 @@ import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import com.simulation.actors.chord.servers.ServerActor
 import com.simulation.actors.chord.supervisors.SupervisorActor
 import akka.util.Timeout
-import com.simulation.actors.chord.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot}
+import com.simulation.actors.chord.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot, removeNodeSupervisor}
 import com.simulation.actors.chord.users.UserActor
 import com.simulation.actors.chord.users.UserActor.{createUserActor, getDataUserActor}
 import com.simulation.beans.EntityDefinition
@@ -49,13 +49,22 @@ object ChordActorDriver {
 
   val timeout = Timeout(10 seconds)
 
-  def createServerNode(): Boolean = {
+  def createServerNode(): Int = {
     if(numNodes > serverActorCount) {
-      supervisorActor ? createServerActor()
+      val nodeIndex = supervisorActor ? createServerActor()
+      val nodeIndexR = Await.result(nodeIndex, timeout.duration).asInstanceOf[Int]
       serverActorCount += 1
-      return true
+      return nodeIndexR
     }
-    false
+    -1
+  }
+
+  def removeNode(nodeIndex:Int): Boolean = {
+    val nodeRemoved = supervisorActor ? removeNodeSupervisor(nodeIndex)
+    val nodeRemovedR = Await.result(nodeRemoved, timeout.duration).asInstanceOf[Boolean]
+    if(nodeRemovedR)
+      serverActorCount -= 1
+    nodeRemovedR
   }
 
   def loadData(id: Int): String = {
