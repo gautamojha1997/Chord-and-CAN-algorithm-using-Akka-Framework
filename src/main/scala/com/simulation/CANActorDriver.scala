@@ -5,12 +5,12 @@ import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.actors.can.BootstrapActor
-import com.simulation.actors.can.BootstrapActor.{createServerActorCAN, loadDataBootstrapCAN}
+import com.simulation.actors.can.BootstrapActor.{createServerActorCAN, getDataBootstrapCAN, getSnapshotCAN, loadDataBootstrapCAN, removeBootstrapNode}
 import com.simulation.utils.Utility.getMoviesData
 import com.typesafe.config.ConfigFactory
 import org.slf4j.{Logger, LoggerFactory}
-import scala.language.postfixOps
 
+import scala.language.postfixOps
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
@@ -27,12 +27,12 @@ object CANActorDriver {
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
   var serverActorCount = 0
   val movieData = getMoviesData
-  val timeout = Timeout(10 seconds)
+  val timeout = Timeout(1000 seconds)
 
   def createServerNodeCAN(): Boolean = {
     if(numNodes > serverActorCount) {
-      serverActorCount += 1
       bootstrapActor ! createServerActorCAN(serverActorCount)
+      serverActorCount += 1
       return true
     }
     false
@@ -45,9 +45,20 @@ object CANActorDriver {
   }
 
   def getData(id: Int): Any = {
+    val data = bootstrapActor ? getDataBootstrapCAN(id)
+    val result = Await.result(data, timeout.duration)
+    result
   }
 
   def printSnapshot(): Any = {
+    logger.info("Print Snapshot Driver")
+    val snapshotRetrieved = bootstrapActor ? getSnapshotCAN()
+    val result = Await.result(snapshotRetrieved, timeout.duration)
+    result
+  }
+
+  def removeNode(nodeIndex:Int): Any ={
+    bootstrapActor ! removeBootstrapNode(nodeIndex)
   }
 
 }

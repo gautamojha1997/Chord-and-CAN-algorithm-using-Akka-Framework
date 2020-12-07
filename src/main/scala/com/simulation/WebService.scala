@@ -81,6 +81,23 @@ object WebService {
             }
           },
 
+          path("removeNodeCAN"){
+            logger.info("In removeNode webservice")
+            parameters("id"){
+              (id) =>
+                if(nodeAdded){
+                  val result = CANActorDriver.removeNode(id.toInt)
+                    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Node removed: " + id))
+                }
+                else{
+                  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                    "Please add a node first"
+                  ))
+                }
+
+            }
+          },
+
           // If this path is received, loadData(id.toInt) is called which loads the result in the form of string in the server.
           path("loadDataCAN"){
             logger.info("In loadData webservice")
