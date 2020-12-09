@@ -38,6 +38,7 @@ libraryDependencies ++= Seq(
 
   "com.codahale.metrics" % "metrics-core" % "3.0.2",
 
+  "com.codahale.metrics" % "metrics-core" % "3.0.2", "com.typesafe.akka" %% "akka-cluster-sharding-typed" % "2.6.10",
 //  "com.datastax.oss" % "java-driver-query-builder" % "4.9.0",
 
 
