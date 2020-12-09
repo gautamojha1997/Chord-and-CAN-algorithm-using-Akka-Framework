@@ -49,6 +49,7 @@ object ChordActorDriver {
 
   val timeout = Timeout(10 seconds)
 
+  //val shard = ServerActor.startMerchantSharding(actorSystem, 1, numNodes)
   def createServerNode(): Int = {
     if(numNodes > serverActorCount) {
       val nodeIndex = supervisorActor ? createServerActor()
