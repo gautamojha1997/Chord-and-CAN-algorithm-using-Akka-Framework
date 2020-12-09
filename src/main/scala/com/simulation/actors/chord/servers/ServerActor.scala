@@ -1,7 +1,5 @@
 package com.simulation.actors.chord.servers
-import akka.actor.{Actor, ActorRef, ActorSelection, ActorSystem, Props}
-import akka.cluster.sharding.ShardRegion.{ExtractEntityId, ExtractShardId}
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
+import akka.actor.{Actor, ActorSelection, Props}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
@@ -273,9 +271,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
 }
 
 object ServerActor {
-
-  def props(id: Int, numNodes: Int): Props = Props(new ServerActor(id: Int, numNodes: Int))
-  sealed trait Command
   case class initializeFingerTable(nodeIndex: Int)
   case class initializeFirstFingerTable(nodeIndex: Int)
   case class getDataServer(nodeIndex: Int, hash:Int)
@@ -285,29 +280,4 @@ object ServerActor {
   case class updateTable(s: Int, i: Int)
   case class getSnapshotServer()
   case class removeNodeServer(activeNodes: mutable.TreeSet[Int])
-
-  case class Envelope(nodeIndex : Int, command: Command) extends Serializable
-
-  val entityIdExtractor: ExtractEntityId ={
-    case Envelope(nodeIndex, command) => (nodeIndex.toString,command)
-  }
-
-  val shardIdExtractor: ExtractShardId ={
-    case Envelope(nodeIndex, _) => Math.abs(nodeIndex.toString.hashCode % 30).toString
-  }
-
-  //private val id = context.self.path.name
-
-
-  def startMerchantSharding(system: ActorSystem, id: Int, numNodes : Int): ActorRef = {
-    ClusterSharding(system).start(
-      typeName = "Server",
-      entityProps = ServerActor.props(id, numNodes),
-      settings = ClusterShardingSettings(system),
-      extractEntityId = entityIdExtractor,
-      extractShardId = shardIdExtractor
-    )
-  }
-
-
 }

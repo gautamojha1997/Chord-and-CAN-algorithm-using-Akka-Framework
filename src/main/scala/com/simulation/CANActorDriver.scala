@@ -6,7 +6,6 @@ import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.actors.can.BootstrapActor
 import com.simulation.actors.can.BootstrapActor.{createServerActorCAN, getDataBootstrapCAN, getSnapshotCAN, loadDataBootstrapCAN, removeBootstrapNode}
-import com.simulation.actors.chord.servers.ServerActor
 import com.simulation.utils.Utility.getMoviesData
 import com.typesafe.config.ConfigFactory
 import org.slf4j.{Logger, LoggerFactory}
@@ -29,8 +28,6 @@ object CANActorDriver {
   var serverActorCount = 0
   val movieData = getMoviesData
   val timeout = Timeout(1000 seconds)
-
-  //val shard = ServerActor.startMerchantSharding(actorSystem, 1, numNodes)
 
   def createServerNodeCAN(): Boolean = {
     if(numNodes > serverActorCount) {
