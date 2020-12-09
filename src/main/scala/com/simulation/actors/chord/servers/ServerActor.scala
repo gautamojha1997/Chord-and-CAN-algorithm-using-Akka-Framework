@@ -11,6 +11,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import com.simulation.utils.ApplicationConstants
 import com.simulation.utils.FingerActor.{containsData, extendData, fetchData, fetchDataValue, fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, storeData, updateFingerTable}
 import com.simulation.utils.Utility.md5
+import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable
 import scala.language.postfixOps
@@ -276,6 +277,9 @@ object ServerActor {
 
   def props(id: Int, numNodes: Int): Props = Props(new ServerActor(id: Int, numNodes: Int))
   sealed trait Command
+
+  private val conf = ConfigFactory.load("application.conf")
+
   case class initializeFingerTable(nodeIndex: Int)
   case class initializeFirstFingerTable(nodeIndex: Int)
   case class getDataServer(nodeIndex: Int, hash:Int)
@@ -292,8 +296,9 @@ object ServerActor {
     case Envelope(nodeIndex, command) => (nodeIndex.toString,command)
   }
 
+  val num_of_shards = conf.getInt("num_shards")
   val shardIdExtractor: ExtractShardId ={
-    case Envelope(nodeIndex, _) => Math.abs(nodeIndex.toString.hashCode % 30).toString
+    case Envelope(nodeIndex, _) => Math.abs(nodeIndex.toString.hashCode % num_of_shards).toString
   }
 
   //private val id = context.self.path.name
