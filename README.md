@@ -404,7 +404,7 @@ We have given the link to make your ec2 instance and how to connect to it and al
 - Firstly to start with AWS EC2 deployment one needs to create an [ec2 instance](https://docs.aws.amazon.com/quickstarts/latest/vmlaunch/step-1-launch-instance.html).
 - Secondly, after creating you need to connect to your instance
 - Thirdly, you need to install a [docker](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html) in your ec2 instance.
-- Lastly, you can view how we have deployed our project on ec2 after completing above steps!! [EC2 deployment](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html).
+- Lastly, you can view how we have deployed our project on ec2 after completing above steps!! [EC2 deployment](https://youtu.be/nUiLzY_UcdI).
 
 
 
