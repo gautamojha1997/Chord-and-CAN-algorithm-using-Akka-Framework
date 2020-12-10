@@ -397,8 +397,14 @@ INFO  [WebService$]: 4.LookupDataCreate a node first
 
 
 ## AWS EC2 Deployment
+We have given the link to make your ec2 instance and how to connect to it and also how to install docker in ec2.
 
+- AWS [cli install](https://docs.aws.amazon.com/cli/latest/userguide/install-linux.html#install-linux-pip).
 
+- Firstly to start with AWS EC2 deployment one needs to create an [ec2 instance](https://docs.aws.amazon.com/quickstarts/latest/vmlaunch/step-1-launch-instance.html).
+- Secondly, after creating you need to connect to your instance
+- Thirdly, you need to install a docker in your [ec2 instance](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html).
+- Lastly, you can view how we have deployed our project on ec2 after completing above steps!! [EC2 deployment](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html).
 
 
 
