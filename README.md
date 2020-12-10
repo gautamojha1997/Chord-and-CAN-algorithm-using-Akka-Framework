@@ -234,8 +234,7 @@ INFO  [WebService$]: 1.AddNode: NodeAdded
 - Webservice result
     - MonteCarlo result : ```1.AddNode: NodeAdded 3.LoadData(49): Id: 49, Name: Knocked Up 1.AddNode: NodeAdded 3.LoadData(34): Id: 34, Name: New Year's Eve 1.AddNode: NodeAdded```
     
-6.Remove Node : Removing the node using id of the node created and transferring data to a new node. Here we will remove node 12 as id=12.
-
+6.Remove Node : Removing the node using id of the node created. Here we will remove node 12 as id=12 and transfer data to a new node as node 12 contains data.
 - Node Removed : 12
 ```
 INFO  [WebService$]: In removeNode webservice
