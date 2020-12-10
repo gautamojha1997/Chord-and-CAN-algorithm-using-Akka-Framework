@@ -306,7 +306,7 @@ INFO  [WebService$]: 1.AddNode: NodeAdded
 
 ### 2. CAN 
 
-1. Adding a node : Add the created node.
+1.Adding a node : Add the created node.
 
 - Adding first node:
 
@@ -327,7 +327,7 @@ INFO  [BootstrapActor]: Updating coordinates of node => Coordinates(0,0.0,1.0,0.
 INFO  [BootstrapActor]: Active nodesHashMap(0 -> Coordinates(0,0.0,1.0,0.0,0.5), 1 -> Coordinates(1,0.0,1.0,0.5,1.0))
 ```
 
-2. Load Data : Using id=3 to load data at the created server above(The id has to be passed at the end of the url as follows: ?id=3)
+2.Load Data : Using id=3 to load data at the created server above(The id has to be passed at the end of the url as follows: ?id=3)
 
 ```
 INFO  [WebService$]: In loadData webservice
@@ -336,7 +336,7 @@ INFO  [CANActorDriver$]: Load data Driver
 INFO  [BootstrapActor]: Node where to load data => 0
 ```
 
-3. Lookup Data : Looking up data with id=3 to check whether the data is loaded at the created node 0.
+3.Lookup Data : Looking up data with id=3 to check whether the data is loaded at the created node 0.
 ```
 INFO  [CANActorDriver$]: Get data Driver
 INFO  [BootstrapActor]: Get row => 3
@@ -346,7 +346,7 @@ INFO  [BootstrapActor]: Found in node = 0
 
 - Webservice result : ```Lookup value: What Happens in Vegas```
 
-4. Snapshot : Returns the overall Co-ordinate and map table.
+4.Snapshot : Returns the overall Co-ordinate and map table.
 
 ```
 INFO  [WebService$]: Snapshot Web Service
@@ -362,7 +362,7 @@ Snapshot created
 1 Coordinates(1,0.0,1.0,0.5,1.0) -> HashMap(0 -> Coordinates(0,0.0,1.0,0.0,0.5))
 ```
 
-5. Remove Node : remove a node with id=0
+5.Remove Node : remove a node with id=0
 
 ```
 INFO  [WebService$]: In removeNode webservice
@@ -374,7 +374,7 @@ INFO  [BootstrapActor]: Node removed
 
 - Webservice result - ```Node removed: 0```
 
-6. Monte Carlo : Used the similar approach to chord and the results are as follows:
+6.Monte Carlo : Used the similar approach to chord, and the results are as follows:
 
 - Used number = 5 for CAN monteCarlo.
 
