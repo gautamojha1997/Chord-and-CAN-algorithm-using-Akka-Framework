@@ -4,6 +4,12 @@ version := "0.1"
 
 scalaVersion := "2.13.3"
 
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case PathList("reference.conf", xs @ _*) => MergeStrategy.concat
+  case x => MergeStrategy.first
+}
+
 libraryDependencies ++= Seq(
 
   "org.scalatest" %% "scalatest" % "3.0.8" % "test",
