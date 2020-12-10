@@ -1,13 +1,13 @@
-package com.simulation.actors.supervisors
+package com.simulation.actors.chord.supervisors
 
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.ConnectToCassandra
-import com.simulation.actors.servers.ServerActor
-import com.simulation.actors.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers}
-import com.simulation.actors.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot, loadDataSupervisor}
+import com.simulation.actors.chord.servers.ServerActor
+import com.simulation.actors.chord.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, removeNodeServer, updateOthers}
+import com.simulation.actors.chord.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot, loadDataSupervisor, removeNodeSupervisor}
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.FingerActor.fetchFingerTable
 import com.simulation.utils.ApplicationConstants
@@ -48,8 +48,17 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
       }
       activeNodes.add(nodeIndex)
       unexploredNodes -= nodeIndex
-
+      sender() ! nodeIndex
     }
+
+    case removeNodeSupervisor(nodeIndex) =>
+      if(activeNodes.contains(nodeIndex)){
+        val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
+        serverActor ! removeNodeServer(activeNodes)
+        activeNodes.remove(nodeIndex)
+        sender() ! true
+      }
+      sender() ! false
 
     case getDataSupervisor(id) => {
       val hash = md5(id.toString, numNodes) % numNodes
@@ -96,6 +105,7 @@ object SupervisorActor {
   case class getDataSupervisor(id: Int)
   case class loadDataSupervisor(data: EntityDefinition)
   case class getSnapshot()
+  case class removeNodeSupervisor(nodeIndex: Int)
 }
 
 

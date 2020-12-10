@@ -2,7 +2,8 @@ package com.simulation.utils
 
 import akka.actor.Actor
 import com.simulation.beans.EntityDefinition
-import com.simulation.utils.FingerActor.{fetchData, fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, storeData, updateFingerTable}
+import com.simulation.utils.FingerActor.{containsData, extendData, fetchData, fetchDataValue, fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, storeData, updateFingerTable}
+
 import scala.collection.mutable
 
 class FingerActor extends Actor{
@@ -46,10 +47,24 @@ class FingerActor extends Actor{
       movieData(nodeIndex).put(data.id,data.name)
 
 
-    case fetchData(nodeIndex: Int, key: Int) =>
+    case fetchDataValue(nodeIndex: Int, key: Int) =>
       sender() ! movieData(nodeIndex).get(key)
 
+    case fetchData(nodeIndex: Int) =>
+      sender() ! movieData(nodeIndex)
 
+    case extendData(nodeIndex, dht: mutable.HashMap[Int, String]) =>
+      if(movieData(nodeIndex) == null){
+        val dhtList = new mutable.HashMap[Int, String]()
+        movieData(nodeIndex) = dhtList
+      }
+      movieData(nodeIndex).addAll(dht)
+
+    case containsData(nodeIndex: Int) =>
+      if(movieData(nodeIndex) == null)
+        sender() ! false
+      else
+        sender() ! true
   }
 }
 
@@ -62,6 +77,9 @@ object FingerActor {
   case class getPredecessor(nodeIndex: Int)
   case class setSuccessor(nodeIndex: Int, value: Int)
   case class setPredecessor(nodeIndex: Int, value: Int)
-  case class fetchData(nodeIndex: Int, key: Int)
+  case class fetchDataValue(nodeIndex: Int, key: Int)
   case class storeData(nodeIndex: Int, dht: EntityDefinition)
+  case class fetchData(nodeIndex: Int)
+  case class extendData(nodeIndex: Int, dht: mutable.HashMap[Int, String])
+  case class containsData(nodeIndex: Int)
 }

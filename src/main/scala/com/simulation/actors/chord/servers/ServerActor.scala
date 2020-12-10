@@ -1,13 +1,17 @@
-package com.simulation.actors.servers
-import akka.actor.{Actor, ActorSelection, Props}
+package com.simulation.actors.chord.servers
+import akka.actor.{Actor, ActorRef, ActorSelection, ActorSystem, Props}
+import akka.cluster.sharding.ShardRegion.{ExtractEntityId, ExtractShardId}
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
-import com.simulation.actors.servers.ServerActor.{findSuccessor, getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, updateOthers, updateTable}
+import com.simulation.actors.chord.servers.ServerActor.{findSuccessor, getDataServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, removeNodeServer, updateOthers, updateTable}
 import com.simulation.beans.EntityDefinition
 import org.slf4j.{Logger, LoggerFactory}
 import com.simulation.utils.ApplicationConstants
-import com.simulation.utils.FingerActor.{fetchData, fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, storeData, updateFingerTable}
+import com.simulation.utils.FingerActor.{containsData, extendData, fetchData, fetchDataValue, fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, storeData, updateFingerTable}
+import com.simulation.utils.Utility.md5
+import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable
 import scala.language.postfixOps
@@ -15,6 +19,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
+import scala.util.control.Breaks.break
 
 class ServerActor(id: Int, numNodes: Int) extends Actor {
 
@@ -124,10 +129,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       val output = getData(id, hash)
       sender() ! output
 
-    case getSnapshotServer() =>
-      logger.info("In getsnapshot server")
-      sender() ! finger_table
-
     /**
      * Returns successor value for the given node by fetching successor value for an arbitrary node and eventually updating the successor value for the given node.
      */
@@ -139,6 +140,50 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       val successorValueR = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
       logger.info("Successor Found, value = " + successorValueR)
       sender() ! successorValueR
+
+    /**
+     * Removes node from chord, updates finger table of other nodes and transfer data to proper node
+     * */
+    case removeNodeServer(activeNodes: mutable.TreeSet[Int]) =>
+      logger.info("Removing node with index = " + id)
+      fingerNode ! updateFingerTable(null, id)
+      activeNodes.remove(id)
+      val activeNodesList = activeNodes.toList
+      (0 until activeNodesList.size).foreach { nodeIndex =>
+        val temp = activeNodesList(nodeIndex)
+        val fTable = fingerNode ? fetchFingerTable(activeNodesList(nodeIndex))
+        val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]].toSeq
+        (0 until buckets).foreach({ fingerIndex =>
+          val fingerValue = fingerNode ? getFingerValue(activeNodesList(nodeIndex), fingerIndex)
+          val fingerValueR = Await.result(fingerValue, timeout.duration).asInstanceOf[Int]
+          if(fingerValueR == id) {
+            val successorValue = fingerNode ? getSuccessor(activeNodesList(nodeIndex))
+            val successorValueR = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
+            if(belongs(successorValueR, fTableR(fingerIndex)._1, fTableR((fingerIndex+1)%buckets)._1+1)){
+              fingerNode ! setFingerValue(activeNodesList(nodeIndex), fingerIndex, successorValueR)
+            }
+            else
+              fingerNode ! setFingerValue(activeNodesList(nodeIndex), fingerIndex, activeNodesList(nodeIndex))
+          }
+        })
+      }
+      val checkData = fingerNode ? containsData(id)
+      val checkDataR = Await.result(checkData, timeout.duration).asInstanceOf[Boolean]
+      if(checkDataR && activeNodes.size > 0) {
+        val dht = fingerNode ? fetchData(id)
+        val dhtR = Await.result(dht, timeout.duration).asInstanceOf[mutable.HashMap[Int, String]]
+        val fTable = fingerNode ? fetchFingerTable(activeNodes.head)
+        val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int, Int]].toSeq
+        val hash = md5(dhtR.toSeq(0)._1.toString, numNodes) % numNodes
+        (0 until buckets).foreach({ fingerValue =>
+          if (belongs(hash, fTableR(fingerValue)._1, fTableR((fingerValue + 1) % buckets)._1 + 1)) {
+            logger.info("Data stored at " + fTableR(fingerValue)._2)
+            fingerNode ! extendData(fTableR(fingerValue)._2, dhtR)
+            break
+          }
+        })
+      }
+
   }
 
   /**
@@ -178,7 +223,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]].toSeq
     (0 until buckets).foreach({ fingerValue =>
       if(belongs(hash, fTableR(fingerValue)._1, fTableR((fingerValue+1)%buckets)._1+1)){
-        val movieName = fingerNode ? fetchData(fTableR(fingerValue)._2, nodeIndex)
+        val movieName = fingerNode ? fetchDataValue(fTableR(fingerValue)._2, nodeIndex)
         movieNameR = Await.result(movieName, timeout.duration).toString
         logger.info("Data was stored at " + fTableR(fingerValue)._2)
         return nodeIndex+" "+movieNameR
@@ -228,6 +273,12 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
 }
 
 object ServerActor {
+
+  def props(id: Int, numNodes: Int): Props = Props(new ServerActor(id: Int, numNodes: Int))
+  sealed trait Command
+
+  private val conf = ConfigFactory.load("application.conf")
+
   case class initializeFingerTable(nodeIndex: Int)
   case class initializeFirstFingerTable(nodeIndex: Int)
   case class getDataServer(nodeIndex: Int, hash:Int)
@@ -235,5 +286,27 @@ object ServerActor {
   case class findSuccessor(index: Int)
   case class updateOthers(activeNodes: mutable.TreeSet[Int])
   case class updateTable(s: Int, i: Int)
-  case class getSnapshotServer()
+  case class removeNodeServer(activeNodes: mutable.TreeSet[Int])
+
+  case class Envelope(nodeIndex : Int, command: Command) extends Serializable
+
+  val entityIdExtractor: ExtractEntityId ={
+    case Envelope(nodeIndex, command) => (nodeIndex.toString,command)
+  }
+
+  val num_of_shards = conf.getInt("num_shards")
+  val shardIdExtractor: ExtractShardId ={
+    case Envelope(nodeIndex, _) => Math.abs(nodeIndex.toString.hashCode % num_of_shards).toString
+  }
+
+
+  def startMerchantSharding(system: ActorSystem, id: Int, numNodes : Int): ActorRef = {
+    ClusterSharding(system).start(
+      typeName = "Server",
+      entityProps = ServerActor.props(id, numNodes),
+      settings = ClusterShardingSettings(system),
+      extractEntityId = entityIdExtractor,
+      extractShardId = shardIdExtractor
+    )
+  }
 }

@@ -1,4 +1,4 @@
-package com.simulation.actors.users
+package com.simulation.actors.chord.users
 
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.pattern.ask
@@ -10,8 +10,8 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.datastax.driver.core.{Cluster, Session}
 import com.datastax.oss.driver.api.core.cql.{BoundStatement, PreparedStatement}
-import com.simulation.actors.supervisors.SupervisorActor.{getDataSupervisor, loadDataSupervisor}
-import com.simulation.actors.users.UserActor.{createUserActor, getDataUserActor, loadData}
+import com.simulation.actors.chord.supervisors.SupervisorActor.{getDataSupervisor, loadDataSupervisor}
+import com.simulation.actors.chord.users.UserActor.{createUserActor, getDataUserActor, loadData}
 import com.simulation.beans.EntityDefinition
 import org.slf4j.{Logger, LoggerFactory}
 

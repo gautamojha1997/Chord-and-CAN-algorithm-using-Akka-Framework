@@ -28,23 +28,131 @@ object WebService {
 
       get {
         concat(
-
           path(""){
+            complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+              "<form action=\"http://localhost:8080/chord\">\n    <input type=\"submit\" value=\"Chord\" />\n</form>" +
+                "<form action=\"http://localhost:8080/can\">\n    <input type=\"submit\" value=\"CAN\" />\n</form>"))
+          },
+
+          path("can"){
+            complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+              "<form action=\"http://localhost:8080/addNodeCAN\">\n    <input type=\"submit\" value=\"Add Node\" />\n</form>" +
+                "<form action=\"http://localhost:8080/loadDataCAN\">\n    <input type=\"submit\" value=\"Load Data\" />\n</form>" +
+                "<form action=\"http://localhost:8080/lookupCAN\">\n    <input type=\"submit\" value=\"Lookup Data\" />\n</form>" +
+                "<form action=\"http://localhost:8080/snapshotCAN\">\n    <input type=\"submit\" value=\"Snapshot\" />\n</form>" +
+                "<form action=\"http://localhost:8080/removeNodeCAN\">\n    <input type=\"submit\" value=\"Remove Node\" />\n</form>"))
+          },
+          path("chord"){
             complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
                 "<form action=\"http://localhost:8080/addNode\">\n    <input type=\"submit\" value=\"Add Node\" />\n</form>" +
                 "<form action=\"http://localhost:8080/loadData\">\n    <input type=\"submit\" value=\"Load Data\" />\n</form>" +
                 "<form action=\"http://localhost:8080/lookup\">\n    <input type=\"submit\" value=\"Lookup Data\" />\n</form>" +
                 "<form action=\"http://localhost:8080/snapshot\">\n    <input type=\"submit\" value=\"Snapshot\" />\n</form>" +
-                  "<form action=\"http://localhost:8080/montecarlo\">\n    <input type=\"submit\" value=\"montecarlo\" />\n</form>"))
+                "<form action=\"http://localhost:8080/removeNode\">\n    <input type=\"submit\" value=\"Remove Node\" />\n</form>" +
+                "<form action=\"http://localhost:8080/montecarlo\">\n    <input type=\"submit\" value=\"montecarlo\" />\n</form>"
+
+            ))
+          },
+
+          path("addNodeCAN"){
+            val result = CANActorDriver.createServerNodeCAN()
+            if(result != -1){
+              nodeAdded = true
+              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                "Node added"
+              ))
+            }
+            else
+              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                "Cant Add"
+              ))
+          },
+
+
+          // If this path is received, simply returns the results for the simulation.
+          path("snapshotCAN"){
+            logger.info("Snapshot Web Service")
+            if(nodeAdded){
+              val result = CANActorDriver.printSnapshot()
+              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                "<html><body>Snapshot created<br>"+ result +"</body></html>"
+              ))
+            }
+            else{
+              complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                "Please add a node first"
+              ))
+            }
+          },
+
+          path("removeNodeCAN"){
+            logger.info("In removeNode webservice")
+            parameters("id"){
+              (id) =>
+                if(nodeAdded){
+                  val result = CANActorDriver.removeNode(id.toInt)
+                  if(result)
+                    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Node removed: " + id))
+                  else
+                    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                      "Cant remove"
+                    ))
+                }
+                else{
+                  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                    "Please add a node first"
+                  ))
+                }
+
+            }
+          },
+
+          // If this path is received, loadData(id.toInt) is called which loads the result in the form of string in the server.
+          path("loadDataCAN"){
+            logger.info("In loadData webservice")
+            parameters("id"){
+              (id) =>
+                if(nodeAdded){
+                  val result = CANActorDriver.loadData(id.toInt)
+                  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                    "Added: " + result
+                  ))
+                }
+                else{
+                  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                    "Please add a node first"
+                  ))
+                }
+
+            }
+          },
+
+          // If this path is received, getData(id.toInt) is called which is used by the user to look data over a server node.
+          path("lookupCAN"){
+            parameters("id"){
+              id =>
+                if(nodeAdded){
+                  val result = CANActorDriver.getData(id.toInt)
+                  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                    "Lookup value: " + result
+                  ))
+                }
+                else{
+                  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                    "Please add a node first"
+                  ))
+                }
+
+            }
           },
 
           // If this path is received, createServerNode() is called which adds a node.
           path("addNode"){
-            val result = ActorDriver.createServerNode()
-            if(result){
+            val result = ChordActorDriver.createServerNode()
+            if(result != -1){
               nodeAdded = true
               complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
-                "Node added"
+                "Node added: " + result
 
               ))
             }
@@ -58,7 +166,7 @@ object WebService {
           path("snapshot"){
             logger.info("Snapshot Web Service")
             if(nodeAdded){
-              val result = ActorDriver.printSnapshot()
+              val result = ChordActorDriver.printSnapshot()
               complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
                 "<html><body>Snapshot created<br>"+ result +"</body></html>"
               ))
@@ -76,7 +184,7 @@ object WebService {
             parameters("id"){
               (id) =>
                 if(nodeAdded){
-                  val result = ActorDriver.loadData(id.toInt)
+                  val result = ChordActorDriver.loadData(id.toInt)
                   complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
                     "Added: " + result
                   ))
@@ -95,10 +203,30 @@ object WebService {
             parameters("id"){
               id =>
                 if(nodeAdded){
-                  val result = ActorDriver.getData(id.toInt)
+                  val result = ChordActorDriver.getData(id.toInt)
                   complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
                     "Lookup value: " + result
                   ))
+                }
+                else{
+                  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                    "Please add a node first"
+                  ))
+                }
+
+            }
+          },
+
+          path("removeNode"){
+            logger.info("In removeNode webservice")
+            parameters("id"){
+              (id) =>
+                if(nodeAdded){
+                  val result = ChordActorDriver.removeNode(id.toInt)
+                  if(result)
+                    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Node removed: " + id))
+                  else
+                    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Node not present: " + id))
                 }
                 else{
                   complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
@@ -116,38 +244,31 @@ object WebService {
               number =>
                 val toPrint = new StringBuilder()
                 List.tabulate(number.toInt)(x => {
-                  //logger.info(x.toString)
                   val choice = rClient.evalI0("runif(%-, %-, %-)", 1, 1, 5)
                   logger.info("choice = "+ choice.toString)
                   if(choice == 1){
-                    //toPrint += "\n" + "1.AddNode: "
                     toPrint.append("1.AddNode: ")
-                    if(ActorDriver.createServerNode()) {
+                    if(ChordActorDriver.createServerNode() != -1) {
                       toPrint.append("NodeAdded")
                       monteNodeAdded = true
-                    } //toPrint += "NodeAdded"
+                    }
                     else {
                       toPrint.append("NodeNotAdded")
-                      //toPrint += "NodeNotAdded"
                     }
-                    //toPrint += "\n"
                   }
                   else if(choice == 2){
                     toPrint.append("2.Snapshot: ")
                     if(monteNodeAdded)
-                      toPrint.append(ActorDriver.printSnapshot().toString)
+                      toPrint.append(ChordActorDriver.printSnapshot().toString)
                     else
                       toPrint.append("Create a node first")
-                    //toPrint += "\n" + "2.Snapshot: "
-                    //toPrint += ActorDriver.printSnapshot().toString
-                    //toPrint += "\n"
                   }
                   else if(choice == 3){
                     toPrint.append("3.LoadData")
                     if(monteNodeAdded){
-                      val id = rClient.evalI0("runif(%-, %-, %-)", 1, 0, ActorDriver.movieData.size - 1)
+                      val id = rClient.evalI0("runif(%-, %-, %-)", 1, 0, ChordActorDriver.movieData.size - 1)
                       toPrint.append("("+id+"): ")
-                      toPrint.append(ActorDriver.loadData(id))
+                      toPrint.append(ChordActorDriver.loadData(id))
                       idList += id
                     }
                     else
@@ -158,7 +279,7 @@ object WebService {
                     if(monteNodeAdded){
                       val id = rClient.evalI0("runif(%-, %-, %-)", 1, 0, idList.size - 1)
                       toPrint.append("("+id+"): ")
-                      toPrint.append(ActorDriver.getData(id))
+                      toPrint.append(ChordActorDriver.getData(id))
                     }
                     else
                       toPrint.append("Create a node first")
