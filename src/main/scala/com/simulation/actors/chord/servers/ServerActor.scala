@@ -159,31 +159,36 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
           if(fingerValueR == id) {
             val successorValue = fingerNode ? getSuccessor(activeNodesList(nodeIndex))
             val successorValueR = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
-            if(belongs(successorValueR, fTableR(fingerIndex)._1, fTableR((fingerIndex+1)%buckets)._1+1)){
-              fingerNode ! setFingerValue(activeNodesList(nodeIndex), fingerIndex, successorValueR)
-            }
-            else
-              fingerNode ! setFingerValue(activeNodesList(nodeIndex), fingerIndex, activeNodesList(nodeIndex))
+            fingerNode ! setFingerValue(activeNodesList(nodeIndex), fingerIndex, activeNodesList(nodeIndex))
           }
         })
       }
       val checkData = fingerNode ? containsData(id)
       val checkDataR = Await.result(checkData, timeout.duration).asInstanceOf[Boolean]
-      if(checkDataR && activeNodes.size > 0) {
-        val dht = fingerNode ? fetchData(id)
-        val dhtR = Await.result(dht, timeout.duration).asInstanceOf[mutable.HashMap[Int, String]]
-        val fTable = fingerNode ? fetchFingerTable(activeNodes.head)
-        val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int, Int]].toSeq
-        val hash = md5(dhtR.toSeq(0)._1.toString, numNodes) % numNodes
-        (0 until buckets).foreach({ fingerValue =>
-          if (belongs(hash, fTableR(fingerValue)._1, fTableR((fingerValue + 1) % buckets)._1 + 1)) {
-            logger.info("Data stored at " + fTableR(fingerValue)._2)
-            fingerNode ! extendData(fTableR(fingerValue)._2, dhtR)
-            break
-          }
-        })
-      }
+      if(checkDataR && activeNodes.size > 0)
+        extendDHT(activeNodes)
+      sender() ! true
+  }
 
+  /**
+   * Transfer data to another node
+   * @param activeNodes
+   * @return
+   */
+
+  def extendDHT(activeNodes: mutable.TreeSet[Int]): Unit = {
+    val dht = fingerNode ? fetchData(id)
+    val dhtR = Await.result(dht, timeout.duration).asInstanceOf[mutable.HashMap[Int, String]]
+    val fTable = fingerNode ? fetchFingerTable(activeNodes.head)
+    val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int, Int]].toSeq
+    val hash = md5(dhtR.toSeq(0)._1.toString, numNodes) % numNodes
+    (0 until buckets).foreach({ fingerValue =>
+      if (belongs(hash, fTableR(fingerValue)._1, fTableR((fingerValue + 1) % buckets)._1 + 1)) {
+        logger.info("Data stored at " + fTableR(fingerValue)._2)
+        fingerNode ! extendData(fTableR(fingerValue)._2, dhtR)
+        return
+      }
+    })
   }
 
   /**
