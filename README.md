@@ -177,6 +177,7 @@ INFO  [SupervisorActor]: LinkedHashMap(13 -> 12, 14 -> 12, 0 -> 12, 4 -> 12)
     - Snapshot created : ```11 -> LinkedHashMap(12 -> 12, 13 -> 11, 15 -> 11, 3 -> 12) 12 -> LinkedHashMap(13 -> 12, 14 -> 12, 0 -> 12, 4 -> 12)```
 
 5.Remove Node : Removing the node using id of the node created. Here we will remove node 12 as id=12 and transfer data to a new node as node 12 contains data.
+
 - Node Removed : 12
 ```
 INFO  [WebService$]: In removeNode webservice
