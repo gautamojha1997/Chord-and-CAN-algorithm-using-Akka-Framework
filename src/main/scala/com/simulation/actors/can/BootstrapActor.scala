@@ -3,7 +3,6 @@ package com.simulation.actors.can
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
-import akka.testkit.TestActor.NullMessage.sender
 import com.simulation.CANActorDriver.timeout
 import com.simulation.ConnectToCassandra
 import com.simulation.actors.can.BootstrapActor._
@@ -16,12 +15,21 @@ import scala.collection.mutable
 import scala.concurrent.Await
 import scala.util.Random
 
+/**
+ * Class which handles the bootstrap server actor which keeps track of all CAN nodes
+ * @param system Actor System
+ */
 class BootstrapActor(system: ActorSystem) extends Actor {
   var activeNodes: mutable.Map[Int, Coordinates] = mutable.Map[Int, Coordinates]()
   var activeNodesActors: mutable.Map[Int, ActorRef] = mutable.Map[Int, ActorRef]()
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
   val conf: Config = ConfigFactory.load("application.conf")
 
+  /**
+   * Fetches all the neighbours of current node
+   * @param server Current node counter
+   * @param nodeActor Reference of current node
+   */
   def findNeighbours(server: Int, nodeActor:ActorRef): Unit = {
     val node: Coordinates = activeNodes(server)
     findXneighbours(node, nodeActor)
@@ -30,6 +38,15 @@ class BootstrapActor(system: ActorSystem) extends Actor {
 
   /**
    * Method checks if 2 nodes are neighbours using cartesian coordinates
+   * @param x1 coordinate of node
+   * @param x2 coordinate of node
+   * @param x3 coordinate of neighbour
+   * @param x4 coordinate of neighbour
+   * @param y1 coordinate of node
+   * @param y2 coordinate of node
+   * @param y3 coordinate of neighbour
+   * @param y4 coordinate of neighbour
+   * @return
    */
   def belongs(x1: Double, x2: Double, x3: Double, x4: Double, y1: Double, y2: Double, y3: Double, y4: Double): Boolean = {
     if (((x1 >= x3 && x1 <= x4) && (x2 >= x3 && x2 <= x4)) || ((x3 <= x1 && x3 <= x2) && (x4 >= x2 && x4 <= x2))) {
@@ -40,9 +57,9 @@ class BootstrapActor(system: ActorSystem) extends Actor {
   }
 
   /**
-   * Checks if X axis neighbour
-   * @param node
-   * @param nodeActor
+   * Finds all the X axis neighbours
+   * @param node Current node to be added
+   * @param nodeActor Reference of current node
    */
   def findXneighbours(node: Coordinates, nodeActor: ActorRef): Unit = {
     activeNodes.foreach{ case(_, neighbour)  =>
@@ -55,9 +72,9 @@ class BootstrapActor(system: ActorSystem) extends Actor {
   }
 
   /**
-   * Checks if Y axis neighbour
-   * @param node
-   * @param nodeActor
+   * Finds all the Y axis neighbours
+   * @param node Current node to be added
+   * @param nodeActor Reference of current node
    */
   def findYneighbours(node: Coordinates, nodeActor: ActorRef): Unit = {
     activeNodes.foreach{ case(_, neighbour)  =>
@@ -70,8 +87,8 @@ class BootstrapActor(system: ActorSystem) extends Actor {
   }
 
   /**
-   * Updates neighbours when node is changed
-   * @param nodeIndex
+   * Updates neighbours when node a node is split to check if neighbours have changed
+   * @param nodeIndex  Node which has been split
    */
   def updateNeighbours(nodeIndex : Int): Unit ={
     val node = activeNodes(nodeIndex)
@@ -88,10 +105,10 @@ class BootstrapActor(system: ActorSystem) extends Actor {
   }
 
   /**
-   * Hops thur neighbours to locate id
-   * @param start
-   * @param id
-   * @return
+   * Hops thru neighbours using dfs to locate the node where id exists
+   * @param start Initial node to begin the search
+   * @param id The data id to be located
+   * @return Value of that data id
    */
   def searchNode(start:Int, id:Int): String ={
     logger.info("Searching id = "+id+" -> Starting from node ="+start)
@@ -120,7 +137,7 @@ class BootstrapActor(system: ActorSystem) extends Actor {
 
   /**
    * Update node coordinate changes to consequent nodes
-   * @param node
+   * @param node Current node whose coordinates have changed
    */
 
   def updateCoordinates(node: Coordinates) :Unit = {

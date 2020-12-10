@@ -34,6 +34,10 @@ object CANActorDriver {
 
  // val shard = NodeActor.startMerchantSharding(actorSystem)
 
+  /**
+   * Create server Node
+   * @return
+   */
   def createServerNodeCAN(): Int = {
     logger.info("Add Node Driver")
     if(numNodes > serverActorCount) {
@@ -44,6 +48,11 @@ object CANActorDriver {
     -1
   }
 
+  /**
+   * Load data in a node
+   * @param id data id
+   * @return Node loaded
+   */
   def loadData(id: Int): String = {
     logger.info("Load data Driver")
     val resultFuture  = bootstrapActor ? loadDataBootstrapCAN(movieData(id))
@@ -51,6 +60,11 @@ object CANActorDriver {
     result.toString
   }
 
+  /**
+   * Get data based on id
+   * @param id data id
+   * @return Value for id
+   */
   def getData(id: Int): Any = {
     logger.info("Get data Driver")
     val data = bootstrapActor ? getDataBootstrapCAN(id)
@@ -58,6 +72,10 @@ object CANActorDriver {
     result
   }
 
+  /**
+   * View snapshot of all the nodes
+   * @return snapshot
+   */
   def printSnapshot(): Any = {
     logger.info("Print Snapshot Driver")
     val snapshotRetrieved = bootstrapActor ? getSnapshotCAN()
@@ -65,6 +83,11 @@ object CANActorDriver {
     result
   }
 
+  /**
+   * Remove particular node from system
+   * @param nodeIndex node to be removed
+   * @return removed successfully
+   */
   def removeNode(nodeIndex:Int): Boolean ={
     logger.info("Remove node Driver")
     bootstrapActor ! removeBootstrapNode(nodeIndex)

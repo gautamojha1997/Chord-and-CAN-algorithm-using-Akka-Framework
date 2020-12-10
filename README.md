@@ -43,20 +43,26 @@ Apache Cassandra is a free and open-source, distributed, wide column store, NoSQ
 - #### [Akka Cluster Sharding](https://doc.akka.io/docs/akka/current/typed/cluster-sharding.html)
 Cluster Sharding is an actor deployment model which is useful when it is needed to distribute actors across several nodes in the cluster. Logical identifier of the actors are used to be able to interact with them without being concerned about their physical location in the cluster.
 
-## Chord Algorithm
+### Coding Structure
 
-### Coding Structure for chord
-
+- Utility
+    - This object file takes a string and number of bits to return hashed value used for generating keys inserted into DHT and for data units.
+    - The hashing algorithm used is MD5.
+- Data.csv
+    - Represents the movie data in id & name format.
 - WebService 
     - This is the entry point for our project, this scala file uses Akka-HTTP library for making routes for different options to run the simulations 
     by calling methods for required simulation task.
-    - After running this object file you get a link ```http://localhost:8080/``` which will redirect to the webpage with 2 options: 1. Chord 2. CAN
-    - After clicking on chord you will redirected to the webpage with 5 buttons:
-        - Add Node : Clicking this button calls method createServerNode() which adds node.
-        - Load Data : Clicking this button calls method loadData(id.toInt) which loads the result in the form of string in the server. To load data append ?id=<any integer> to your link.
-        - Lookup Data : Clicking this button calls method getData(id.toInt) which is used by the user to look data over a server node using Chord Protocol. To look-up data append ?id=<any integer> to your link.
-        - Snapshot : Clicking this button simply returns all the result for the simulation.
-        - Montecarlo : Clicking this button invokes the Rclient object to randomly select the 4 options from above. The 4 options are generated randomly and they are : 1.AddNode, 2.Snapshot, 3.LoadData, 4.LookupData. To use Monte-Carlo append ?number=<any integer> to your link.
+    - After running this object file you get a link ```http://localhost:8080/``` which will redirect to the webpage with 2 options: 
+    
+1. ### Chord
+- After clicking on chord you will redirected to the webpage with 6 buttons:
+    - Add Node : Clicking this button calls method createServerNode() which adds node.
+    - Load Data : Clicking this button calls method loadData(id.toInt) which loads the result in the form of string in the server. To load data append ?id=<any integer> to your link.
+    - Lookup Data : Clicking this button calls method getData(id.toInt) which is used by the user to look data over a server node using Chord Protocol. To look-up data append ?id=<any integer> to your link.
+    - Snapshot : Clicking this button simply returns all the result for the simulation.
+    - Remove Node : Clicking this button calls method removeNode() which remove node.
+    - Montecarlo : Clicking this button invokes the Rclient object to randomly select the 4 options from above. The 4 options are generated randomly and they are : 1.AddNode, 2.Snapshot, 3.LoadData, 4.LookupData. To use Monte-Carlo append ?number=<any integer> to your link.
         
 - ChordActorDriver
     - This object file defines the number of users, servers, ActorSystem, Actors (serverActor, userActor, supervisorActor, fingerActor).
@@ -103,13 +109,45 @@ Cluster Sharding is an actor deployment model which is useful when it is needed 
 	- case class storeData(nodeIndex: Int, dht: EntityDefinition): It is used to store the data stored at that node
 	- case class extendData(nodeIndex: Int, dht: mutable.HashMap[Int, String]) : It is used to add the data of deleted node to a node with index "nodeIndex"
 	- case class containsData(nodeIndex: Int): This is used to check if a given node has any data stored in it.
-	
-- Utility 
-    - This object file takes a string and number of bits to return hashed value used for generating keys inserted into DHT and for data units.
-    - The hashing algorithm used is MD5.
     
-- Data.csv
-    - Represents the movie data in id & name format.     
+2. ### CAN
+- After clicking on CAN you will redirected to the webpage with 6 buttons:
+  - Add Node : Clicking this button calls method createServerNodeCAN() which adds node.
+  - Load Data : Clicking this button calls method loadData(id.toInt) which loads the result in the form of string in the server. To load data append ?id=<any integer> to your link.
+  - Lookup Data : Clicking this button calls method getData(id.toInt) which is used by the user to look data over a server node using Chord Protocol. To look-up data append ?id=<any integer> to your link.
+  - Snapshot : Clicking this button simply returns all the result for the simulation.
+  - Remove Node : Clicking this button calls method removeNode() which remove node.
+  - Montecarlo : Clicking this button invokes the Rclient object to randomly select the 4 options from above. The 4 options are generated randomly and they are : 1.AddNode, 2.Snapshot, 3.LoadData, 4.LookupData. To use Monte-Carlo append ?number=<any integer> to your link.
+
+- CANActorDriver
+    - This object file defines the number of active servers, ActorSystem, Actors (nodeActor, bootstrapActor).
+    - It also defines methods used by Webservices and defined in the actor class files to load data, lookup data and display the result.
+    
+- BootstrapActor
+    - Class which handles the bootstrap server actor which keeps track of all CAN nodes and defines messages as follows:
+        - case class createServerActorCAN(serverCount: Int) : Creates a new node actor & adds a node & updates the neighbours
+        - case class getDataBootstrapCAN(id: Int) : Fetches the data using id
+        - case class loadDataBootstrapCAN(data: EntityDefinition) : Loads the data id & value in any node
+        - case class getSnapshotCAN() : Gets the system state by fetching all nodes & their neighbours
+        - case class removeBootstrapNode(nodeIndex:Int) : Removes an added node & updates its neighbours 
+    - Also, the class defines following methods :
+        - findNeighbours(server: Int, nodeActor:ActorRef): Fetches all the neighbours of current node
+        - belongs(x1: Double, x2: Double, x3: Double, x4: Double, y1: Double, y2: Double, y3: Double, y4: Double): Method checks if 2 nodes are neighbours using cartesian coordinates
+        - findXneighbours(node: Coordinates, nodeActor: ActorRef): Finds all the X axis neighbours
+        - findYneighbours(node: Coordinates, nodeActor: ActorRef): Finds all the Y axis neighbours
+        - updateNeighbours(nodeIndex : Int): Updates neighbours when node a node is split to check if neighbours have changed
+        - searchNode(start:Int, id:Int): Hops thru neighbours using dfs to locate the node where id exists
+        - updateCoordinates(node: Coordinates) : Update node coordinate changes to consequent nodes
+- NodeActor
+    - Class to handle the individual node, manage its neighbours & data and defines messages as follows:
+        -  case class fetchDHT() : Returns all the keys & values that the node has saved
+        -  case class loadDataNode(data: EntityDefinition) : load data into that node
+        -  case class addNeighbour(coordinates: Coordinates) : Add a new neighbour to the node
+        -  case class getNeighbours() : Get all the existing neighbours of node
+        -  case class removeNeighbour(server: Int) : Remove an existing neighbour from the node
+        -  case class updateCoordinatesNode(coordinates: Coordinates) : Updates the coordinates of the neighbours 
+        -  case class transferDHT(dhtTransfer: mutable.HashMap[Int, String]) : Appends the hashmaps of 2 nodes - current & transfered
+
 ## Results
 
 1.Adding Node : Adding the created node.

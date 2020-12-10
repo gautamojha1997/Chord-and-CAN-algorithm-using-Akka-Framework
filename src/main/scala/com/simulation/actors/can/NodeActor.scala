@@ -9,6 +9,9 @@ import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable
 
+/**
+ * Class to handle the individual node, manage its neighbours & data
+ */
 class NodeActor extends Actor{
 
   var dht: mutable.Map[Int, String] = mutable.HashMap[Int, String]()
