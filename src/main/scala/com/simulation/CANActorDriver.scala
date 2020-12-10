@@ -34,14 +34,14 @@ object CANActorDriver {
 
  // val shard = NodeActor.startMerchantSharding(actorSystem)
 
-  def createServerNodeCAN(): Boolean = {
+  def createServerNodeCAN(): Int = {
     logger.info("Add Node Driver")
     if(numNodes > serverActorCount) {
       bootstrapActor ! createServerActorCAN(serverActorCount)
       serverActorCount += 1
-      return true
+      return serverActorCount
     }
-    false
+    -1
   }
 
   def loadData(id: Int): String = {
@@ -65,9 +65,10 @@ object CANActorDriver {
     result
   }
 
-  def removeNode(nodeIndex:Int): Any ={
+  def removeNode(nodeIndex:Int): Boolean ={
     logger.info("Remove node Driver")
     bootstrapActor ! removeBootstrapNode(nodeIndex)
+    true
   }
 
 }

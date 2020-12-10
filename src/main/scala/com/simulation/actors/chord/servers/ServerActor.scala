@@ -169,7 +169,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       }
       val checkData = fingerNode ? containsData(id)
       val checkDataR = Await.result(checkData, timeout.duration).asInstanceOf[Boolean]
-      if(checkDataR) {
+      if(checkDataR && activeNodes.size > 0) {
         val dht = fingerNode ? fetchData(id)
         val dhtR = Await.result(dht, timeout.duration).asInstanceOf[mutable.HashMap[Int, String]]
         val fTable = fingerNode ? fetchFingerTable(activeNodes.head)

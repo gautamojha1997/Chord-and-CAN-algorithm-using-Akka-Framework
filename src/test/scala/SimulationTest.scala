@@ -1,7 +1,7 @@
 import UtilityTest.md5
 import akka.actor.{ActorPath, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
-import com.simulation.ChordActorDriver
+import com.simulation.{CANActorDriver, ChordActorDriver}
 import com.simulation.actors.chord.supervisors.SupervisorActor
 import com.simulation.beans.EntityDefinition
 import org.scalatest.{BeforeAndAfter, FlatSpecLike, MustMatchers, stats}
@@ -12,8 +12,6 @@ import scala.io.Source
 
 class SimulationTest extends TestKit(ActorSystem("actorSystemTest")) with FlatSpecLike with BeforeAndAfter with MustMatchers {
   var nodeIndex: Int = -1
-  val logger: Logger = LoggerFactory.getLogger(this.getClass)
-
 
   "Hash" should "be generated properly" in {
     assert(md5("test", 3) < math.pow(2, 3))
@@ -46,15 +44,44 @@ class SimulationTest extends TestKit(ActorSystem("actorSystemTest")) with FlatSp
     assert(serverActor.belongs(4,0,7))
   }
 
-  "Node" should "be properly created" in {
+  "Node" should "be properly created for CHORD" in {
     nodeIndex = ChordActorDriver.createServerNode()
     assert(nodeIndex != -1)
   }
 
-  "Node" should "be remobed properly" in {
-    val result = ChordActorDriver.removeNode(nodeIndex.toInt)
+  "Data" should "be loaded properly for CHORD" in {
+    val result = ChordActorDriver.loadData(5)
+    assert(result != "")
+  }
+
+  "Data" should "be present for CHORD" in {
+    val result = ChordActorDriver.getData(5)
+    assert(result != "")
+  }
+
+  "Node" should "be removed properly for CHORD" in {
+    val result = ChordActorDriver.removeNode(nodeIndex)
     assert(result == true)
   }
 
+  "Node" should "be properly created for CAN" in {
+    nodeIndex = CANActorDriver.createServerNodeCAN()
+    assert(nodeIndex != -1)
+  }
+
+  "Data" should "be loaded properly for CAN" in {
+    val result = CANActorDriver.loadData(5)
+    assert(result != "")
+  }
+
+  "Data" should "be present for CAN" in {
+    val result = CANActorDriver.getData(5)
+    assert(result != "")
+  }
+
+  "Node" should "be removed properly for CAN" in {
+    val result = CANActorDriver.removeNode(nodeIndex)
+    assert(result == true)
+  }
 
 }

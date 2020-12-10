@@ -56,7 +56,7 @@ object WebService {
 
           path("addNodeCAN"){
             val result = CANActorDriver.createServerNodeCAN()
-            if(result){
+            if(result != -1){
               nodeAdded = true
               complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
                 "Node added"
@@ -91,7 +91,12 @@ object WebService {
               (id) =>
                 if(nodeAdded){
                   val result = CANActorDriver.removeNode(id.toInt)
-                  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Node removed: " + id))
+                  if(result)
+                    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Node removed: " + id))
+                  else
+                    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
+                      "Cant remove"
+                    ))
                 }
                 else{
                   complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
