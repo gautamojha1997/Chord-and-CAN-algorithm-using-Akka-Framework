@@ -1,8 +1,8 @@
-# CS 441 Homework 3 : Implementation of Chord algorithm using Akka Simulations.
+# CS 441 Project : Implementation of Chord and CAN algorithm using Akka Simulations.
 
 ## Overview
-The Homework aims to make simulations to demonstrate working of Cloud Simulator using Chord Algorithm, for the implementation we are using Akka which is a
-open source toolkit for designing scalable, resilient systems that span processor cores and networks.
+The Homework aimed to make simulations to demonstrate working of Cloud Simulator using Chord Algorithm upto add Node, the project aims to demonstrate simulations with continuation of Chord for fault tolerance and implementation of CAN algorithm ,for the implementation we are using Akka which is a
+open source toolkit for designing scalable, resilient systems that span processor cores and networks. The Project uses Akka Cluster Sharding actor deployment model.
 
 ### Project Members
 
@@ -13,7 +13,8 @@ open source toolkit for designing scalable, resilient systems that span processo
 
 ### Instructions to run the simulations
 #### Prerequisites
-- Install [Simple Build Toolkit (SBT)](https://www.scala-sbt.org/1.x/docs/index.html)
+- Install [Simple Build Toolkit (SBT)](https://www.scala-sbt.org/1.x/docs/index.html) 
+- Akka Cluster Sharding [SBT dependency](https://doc.akka.io/docs/akka/current/typed/cluster-sharding.html)
 - Install [Cassandra](https://cassandra.apache.org/download/)
 - To install Cassandra you will need Python 2.7 & Java SE Development Kit 8u251. Follow [link](https://phoenixnap.com/kb/install-cassandra-on-windows).
 - After installation, to enable Cassandra, set the value of the flag *enableCassandra* to *true* in the application.conf file.
@@ -33,30 +34,34 @@ Monte Carlo simulations are used to model the probability of different outcomes 
 The simulation is done by generating random requests to the API. In order to introduce randomness, the eval function of the R client is used. 
 - #### [Cassandra](https://cassandra.apache.org/)
 Apache Cassandra is a free and open-source, distributed, wide column store, NoSQL database management system designed to handle large amounts of data across many commodity servers, providing high availability with no single point of failure. Cassandra offers robust support for clusters spanning multiple datacenters, with asynchronous masterless replication allowing low latency operations for all clients. We have used Cassandra to save the state of server actors, the movie id and movie name has been stored & fetched after the server actor loads the data.
+- #### [Akka Cluster Sharding](https://doc.akka.io/docs/akka/current/typed/cluster-sharding.html)
+Cluster Sharding is an actor deployment model which is useful when it is needed to distribute actors across several nodes in the cluster. Logical identifier of the actors are used to be able to interact with them without being concerned about their physical location in the cluster.
 
+## Chord Algorithm
 
-### Homework Files 
+### Coding Structure for chord
 
 - WebService 
-    - This is the entry point for our homework, this scala file uses Akka-HTTP library for making routes for different options to run the simulations 
+    - This is the entry point for our project, this scala file uses Akka-HTTP library for making routes for different options to run the simulations 
     by calling methods for required simulation task.
-    - After running this object file you get a link ```http://localhost:8080/``` which will redirect to the webpage with 4 buttons:
+    - After running this object file you get a link ```http://localhost:8080/``` which will redirect to the webpage with 2 options: 1. Chord 2. CAN
+    - After clicking on chord you will redirected to the webpage with 5 buttons:
         - Add Node : Clicking this button calls method createServerNode() which adds node.
         - Load Data : Clicking this button calls method loadData(id.toInt) which loads the result in the form of string in the server. To load data append ?id=<any integer> to your link.
         - Lookup Data : Clicking this button calls method getData(id.toInt) which is used by the user to look data over a server node using Chord Protocol. To look-up data append ?id=<any integer> to your link.
         - Snapshot : Clicking this button simply returns all the result for the simulation.
         - Montecarlo : Clicking this button invokes the Rclient object to randomly select the 4 options from above. The 4 options are generated randomly and they are : 1.AddNode, 2.Snapshot, 3.LoadData, 4.LookupData. To use Monte-Carlo append ?number=<any integer> to your link.
         
-- ActorDriver
-    - This object file defines the number of users, servers, ActorSystem, Actors (serverActor, userActor, supervisorActor).
+- ChordActorDriver
+    - This object file defines the number of users, servers, ActorSystem, Actors (serverActor, userActor, supervisorActor, fingerActor).
     - It also defines methods used by Webservices and defined in the actor class files to load data, lookup data and display the result.
 
 -  ServerActor
     - This class file represents actor-server which implements chord algorithm and defines messages as follows:
         - case initializeFirstFingerTable(nodeIndex: Int) : It initializes the first finger table for the first server-node.
         - case initializeFingerTable(nodeIndex: Int) : It initializes the finger table for all the server nodes after the first one.
-        - case updateOthers(nodeIndex: Int) : It updates all nodes whose finger table should refer to the new node which joins the network.
-        - case updateTable(predecessorValue:Int, nodeIndex: Int, i: Int) : It is invoked by updateOthers which recursively updates finger-table.
+        - case updateOthers(activeNodes: mutable.TreeSet[Int]) : It updates all nodes whose finger table should refer to the new node which joins the network.
+        - case updateTable(s: Int, i: Int) : It is invoked by updateOthers which recursively updates finger-table.
         - case updatePredecessor(nodeIndex: Int) : This case class updates the predecessor.
         - case getSuccessor() : Returns the successor of the given entry.
         - case getDataServer(id: Int, m: Int, hash: Int) : Returns output when looked-up is performed. 
