@@ -189,7 +189,7 @@ INFO  [ServerActor]: Checking if 4 belongs in the range 3 - 13
 INFO  [ServerActor]: Data stored at 11
 ```
 
-Snapshot after node 11 is removed : ```11 -> LinkedHashMap(12 -> 11, 13 -> 11, 15 -> 11, 3 -> 11)```
+Snapshot after node 12 is removed : ```11 -> LinkedHashMap(12 -> 11, 13 -> 11, 15 -> 11, 3 -> 11)```
  
     
 6.MonteCarlo : Generates random requests based on the number specified. In order to introduce randomness, the eval function of the R client is used.
