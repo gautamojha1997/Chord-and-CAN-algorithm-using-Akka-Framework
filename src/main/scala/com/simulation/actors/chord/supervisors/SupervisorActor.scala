@@ -6,7 +6,7 @@ import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
 import com.simulation.ConnectToCassandra
 import com.simulation.actors.chord.servers.ServerActor
-import com.simulation.actors.chord.servers.ServerActor.{getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, removeNodeServer, updateOthers}
+import com.simulation.actors.chord.servers.ServerActor.{getDataServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, removeNodeServer, updateOthers}
 import com.simulation.actors.chord.supervisors.SupervisorActor.{createServerActor, getDataSupervisor, getSnapshot, loadDataSupervisor, removeNodeSupervisor}
 import com.simulation.beans.EntityDefinition
 import com.simulation.utils.FingerActor.fetchFingerTable
@@ -21,7 +21,6 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 import scala.language.postfixOps
-import scala.tools.nsc.doc.model.Entity
 
 class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor{
 
@@ -54,7 +53,8 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
     case removeNodeSupervisor(nodeIndex) =>
       if(activeNodes.contains(nodeIndex)){
         val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
-        serverActor ! removeNodeServer(activeNodes)
+        val result = serverActor ? removeNodeServer(activeNodes)
+        Await.result(result, timeout.duration)
         activeNodes.remove(nodeIndex)
         sender() ! true
       }
@@ -62,7 +62,6 @@ class SupervisorActor(id: Int, numNodes: Int, system: ActorSystem) extends Actor
 
     case getDataSupervisor(id) => {
       val hash = md5(id.toString, numNodes) % numNodes
-      val chosenNode = activeNodes.minAfter(hash)
       val serverActor = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + activeNodes.head) // (Random.nextInt(activeNodes.size)))
       val data = serverActor ? getDataServer(id,hash)
       val result = Await.result(data, timeout.duration)

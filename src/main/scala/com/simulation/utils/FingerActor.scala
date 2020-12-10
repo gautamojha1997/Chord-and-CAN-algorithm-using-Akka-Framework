@@ -58,7 +58,7 @@ class FingerActor extends Actor{
         val dhtList = new mutable.HashMap[Int, String]()
         movieData(nodeIndex) = dhtList
       }
-      movieData(nodeIndex).addAll(dht)
+      movieData(nodeIndex) = movieData(nodeIndex).addAll(dht)
 
     case containsData(nodeIndex: Int) =>
       if(movieData(nodeIndex) == null)
