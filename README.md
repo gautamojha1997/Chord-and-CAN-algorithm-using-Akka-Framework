@@ -175,8 +175,23 @@ INFO  [SupervisorActor]: LinkedHashMap(13 -> 12, 14 -> 12, 0 -> 12, 4 -> 12)
 
 - Webservice result
     - Snapshot created : ```11 -> LinkedHashMap(12 -> 12, 13 -> 11, 15 -> 11, 3 -> 12) 12 -> LinkedHashMap(13 -> 12, 14 -> 12, 0 -> 12, 4 -> 12)```
+
+5.Remove Node : Removing the node using id of the node created. Here we will remove node 12 as id=12 and transfer data to a new node as node 12 contains data.
+- Node Removed : 12
+```
+INFO  [WebService$]: In removeNode webservice
+INFO  [ServerActor]: Removing node with index = 12
+INFO  [ServerActor]: Checking if 4 belongs in the range 12 - 14
+INFO  [ServerActor]: Checking if 4 belongs in the range 13 - 16
+INFO  [ServerActor]: Checking if 4 belongs in the range 15 - 4
+INFO  [ServerActor]: Checking if 4 belongs in the range 3 - 13
+INFO  [ServerActor]: Data stored at 11
+```
+
+Snapshot after node 11 is removed : ```11 -> LinkedHashMap(12 -> 11, 13 -> 11, 15 -> 11, 3 -> 11)```
+ 
     
-5.MonteCarlo : Generates random requests based on the number specified. In order to introduce randomness, the eval function of the R client is used.
+6.MonteCarlo : Generates random requests based on the number specified. In order to introduce randomness, the eval function of the R client is used.
 
 Here we have used numbers = 5.
 
@@ -234,20 +249,6 @@ INFO  [WebService$]: 1.AddNode: NodeAdded
 - Webservice result
     - MonteCarlo result : ```1.AddNode: NodeAdded 3.LoadData(49): Id: 49, Name: Knocked Up 1.AddNode: NodeAdded 3.LoadData(34): Id: 34, Name: New Year's Eve 1.AddNode: NodeAdded```
     
-6.Remove Node : Removing the node using id of the node created. Here we will remove node 12 as id=12 and transfer data to a new node as node 12 contains data.
-- Node Removed : 12
-```
-INFO  [WebService$]: In removeNode webservice
-INFO  [ServerActor]: Removing node with index = 12
-INFO  [ServerActor]: Checking if 4 belongs in the range 12 - 14
-INFO  [ServerActor]: Checking if 4 belongs in the range 13 - 16
-INFO  [ServerActor]: Checking if 4 belongs in the range 15 - 4
-INFO  [ServerActor]: Checking if 4 belongs in the range 3 - 13
-INFO  [ServerActor]: Data stored at 11
-```
-
-Snapshot after node 11 is removed : ```11 -> LinkedHashMap(12 -> 11, 13 -> 11, 15 -> 11, 3 -> 11)```
-
 
 7.Cassandra logs 
 ```
