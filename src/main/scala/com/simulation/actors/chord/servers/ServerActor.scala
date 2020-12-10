@@ -5,7 +5,7 @@ import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
-import com.simulation.actors.chord.servers.ServerActor.{findSuccessor, getDataServer, getSnapshotServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, removeNodeServer, updateOthers, updateTable}
+import com.simulation.actors.chord.servers.ServerActor.{findSuccessor, getDataServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, removeNodeServer, updateOthers, updateTable}
 import com.simulation.beans.EntityDefinition
 import org.slf4j.{Logger, LoggerFactory}
 import com.simulation.utils.ApplicationConstants
@@ -129,10 +129,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       val output = getData(id, hash)
       sender() ! output
 
-    case getSnapshotServer() =>
-      logger.info("In getsnapshot server")
-      sender() ! finger_table
-
     /**
      * Returns successor value for the given node by fetching successor value for an arbitrary node and eventually updating the successor value for the given node.
      */
@@ -145,6 +141,9 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       logger.info("Successor Found, value = " + successorValueR)
       sender() ! successorValueR
 
+    /**
+     * Removes node from chord, updates finger table of other nodes and transfer data to proper node
+     * */
     case removeNodeServer(activeNodes: mutable.TreeSet[Int]) =>
       logger.info("Removing node with index = " + id)
       fingerNode ! updateFingerTable(null, id)
@@ -287,7 +286,6 @@ object ServerActor {
   case class findSuccessor(index: Int)
   case class updateOthers(activeNodes: mutable.TreeSet[Int])
   case class updateTable(s: Int, i: Int)
-  case class getSnapshotServer()
   case class removeNodeServer(activeNodes: mutable.TreeSet[Int])
 
   case class Envelope(nodeIndex : Int, command: Command) extends Serializable
@@ -300,8 +298,6 @@ object ServerActor {
   val shardIdExtractor: ExtractShardId ={
     case Envelope(nodeIndex, _) => Math.abs(nodeIndex.toString.hashCode % num_of_shards).toString
   }
-
-  //private val id = context.self.path.name
 
 
   def startMerchantSharding(system: ActorSystem, id: Int, numNodes : Int): ActorRef = {
