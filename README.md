@@ -395,7 +395,20 @@ INFO  [WebService$]: 4.LookupDataCreate a node first
 
 - Webservice result - ```4.LookupDataCreate a node first 4.LookupDataCreate a node first 2.Snapshot: Create a node first 2.Snapshot: Create a node first 1.AddNode: NodeAdded```
 
+## Evaluation of results
 
+After understanding the concepts CAN & the Chord algorithm, we have implemented both the algorithms. The differences between both the algorithms have been highlighted using the below statistics. We have added 8 nodes to each architecture & compared add, remove, load & lookup times for first and the average of other iterations. 
+
+
+### Differences
+- The Chord and CAN are both distributed P2P infrastructures. However, they are different in their architectures. Chord nodes form a ring or circle, and they just keep track of ranges/buckets using Finger Table. Whereas in CAN, a virtual multi-dimensional Cartesian coordinate space is formed and the nodes keep track of their immediate neighbours only. 
+- The Chord implementation increases linearly since active nodes times finger table entries determine performance rather than CAN which increases polynomially as Nodes times Neighbours determine performance. 
+- Likewise, this is evident by the number of nodes in the architecture. Chord performance remains more or less the same as long as the ring size is the same. But, for CAN the difference is noticeable. As nodes increase, performance suffers.
+- Add node for both algorithms shows stark difference, since in Chord we have to update all the finger tables when a new node is added. Whereas in CAN, only the node being split & the corresponding neighbours are updated.
+- Load data works differently for both as in Chord, only a particular node is responsible for that key. So, the data has to be loaded to that key only. CAN has a liberty of loading the data anywhere. Thus, it performs better.
+- Lookup data is debatable as Chord achieves constant execution times due to limited hops. However, CAN shows inconsistency since routing between 2 nodes only occurs by hoping through neighbours. As we increase, the number of nodes, this metric suffers.
+- Similar to add, remove node in Chord deals with updating all the nodes's finger tables. Whereas, in CAN only the neighbours are concerned with the deletion.
+- Chord's performance shown is slighly  poorer to CAN as per the above diagram but that is down to size of the architecture, the presence of multiple actors & their communication as compared to CAN. However, as the number of nodes will increase, the statistics would turn around due to the growth of their functions.
 
 ## AWS EC2 Deployment
 We have given the link to make your ec2 instance and how to connect to it and also how to install docker in ec2.
