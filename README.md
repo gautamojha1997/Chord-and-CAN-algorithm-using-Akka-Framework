@@ -75,7 +75,7 @@ Cluster Sharding is an actor deployment model which is useful when it is needed 
     - Also, the class defines following methods :
         - getData(id: Int, m: Int, hash: Int) : Returns result in the form of string when invoked by getDataServer(id: Int, m: Int, hash: Int).
         - findSuccessor(nodeIndex: Int, activeNodesList:List[Int], entry:Int) : Returns successor value for the given node by fetching successor value for an arbitrary node and eventually updating the successor value for the given node.
-        - extendDHT(activeNodes: mutable.TreeSet[Int]) : 
+        - extendDHT(activeNodes: mutable.TreeSet[Int]) : This function transfer data from deleted node to a new suitable node.
         - belongs(s:Int, n: Int, successorValue: Int) : Invoked by updateTable() to check whether the node belongs within the range of predecessor and fingerIthEntry value.
         - def loadData(data: EntityDefinition, nodeIndex: Int, hash: Int) : Returns result in the form of string when invoked by loadDataServer(data: EntityDefinition, nodeIndex: Int, hash: Int).
         - def startMerchantSharding(system: ActorSystem, id: Int, numNodes : Int): Returns reference of the sharded server actor when called by the driver.
@@ -101,8 +101,8 @@ Cluster Sharding is an actor deployment model which is useful when it is needed 
 	- case class setPredecessor(nodeIndex: Int, value: Int): It is used to set the predecessor of a given node
 	- case class fetchData(nodeIndex: Int, key: Int): It is used to fetch the data stored at the node
 	- case class storeData(nodeIndex: Int, dht: EntityDefinition): It is used to store the data stored at that node
-	- case class extendData(nodeIndex: Int, dht: mutable.HashMap[Int, String]) : 
-	- case class containsData(nodeIndex: Int)
+	- case class extendData(nodeIndex: Int, dht: mutable.HashMap[Int, String]) : It is used to add the data of deleted node to a node with index "nodeIndex"
+	- case class containsData(nodeIndex: Int): This is used to check if a given node has any data stored in it.
 	
 - Utility 
     - This object file takes a string and number of bits to return hashed value used for generating keys inserted into DHT and for data units.
@@ -234,16 +234,20 @@ INFO  [WebService$]: 1.AddNode: NodeAdded
 - Webservice result
     - MonteCarlo result : ```1.AddNode: NodeAdded 3.LoadData(49): Id: 49, Name: Knocked Up 1.AddNode: NodeAdded 3.LoadData(34): Id: 34, Name: New Year's Eve 1.AddNode: NodeAdded```
     
-6.Remove Node : Removing the node using id of the node created. Here we will remove node 11 as id=11.
+6.Remove Node : Removing the node using id of the node created. Here we will remove node 12 as id=12.
 
-- Node Removed : 11
+- Node Removed : 12
 ```
 INFO  [WebService$]: In removeNode webservice
-INFO  [WebService$]: In removeNode webservice
-INFO  [ServerActor]: Removing node with index = 11
+INFO  [ServerActor]: Removing node with index = 12
+INFO  [ServerActor]: Checking if 4 belongs in the range 12 - 14
+INFO  [ServerActor]: Checking if 4 belongs in the range 13 - 16
+INFO  [ServerActor]: Checking if 4 belongs in the range 15 - 4
+INFO  [ServerActor]: Checking if 4 belongs in the range 3 - 13
+INFO  [ServerActor]: Data stored at 11
 ```
 
-Snapshot after node 11 is removed : ```12 -> LinkedHashMap(13 -> 12, 14 -> 12, 0 -> 12, 4 -> 12)```
+Snapshot after node 11 is removed : ```11 -> LinkedHashMap(12 -> 11, 13 -> 11, 15 -> 11, 3 -> 11)```
 
 
 7.Cassandra logs 
