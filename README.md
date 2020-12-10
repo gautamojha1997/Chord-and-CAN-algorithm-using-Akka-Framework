@@ -41,7 +41,8 @@ The simulation is done by generating random requests to the API. In order to int
 - #### [Cassandra](https://cassandra.apache.org/)
 Apache Cassandra is a free and open-source, distributed, wide column store, NoSQL database management system designed to handle large amounts of data across many commodity servers, providing high availability with no single point of failure. Cassandra offers robust support for clusters spanning multiple datacenters, with asynchronous masterless replication allowing low latency operations for all clients. We have used Cassandra to save the state of server actors, the movie id and movie name has been stored & fetched after the server actor loads the data.
 - #### [Akka Cluster Sharding](https://doc.akka.io/docs/akka/current/typed/cluster-sharding.html)
-Cluster Sharding is an actor deployment model which is useful when it is needed to distribute actors across several nodes in the cluster. Logical identifier of the actors are used to be able to interact with them without being concerned about their physical location in the cluster.
+Cluster Sharding is an actor deployment model which is useful when it is needed to distribute actors across several nodes in the cluster. Logical identifier of the actors are used to be able to interact with them without being concerned about their physical location in the cluster. 
+Referred from: [Tour of Akka Cluster – Cluster Sharding](https://manuel.bernhardt.io/2018/02/26/tour-akka-cluster-cluster-sharding/).
 
 ### Coding Structure
 
@@ -402,7 +403,7 @@ We have given the link to make your ec2 instance and how to connect to it and al
 - AWS [cli install](https://docs.aws.amazon.com/cli/latest/userguide/install-linux.html#install-linux-pip).
 
 - Firstly to start with AWS EC2 deployment one needs to create an [ec2 instance](https://docs.aws.amazon.com/quickstarts/latest/vmlaunch/step-1-launch-instance.html).
-- Secondly, after creating you need to connect to your instance
+- Secondly, after creating you need to [connect](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AccessingInstancesLinux.html) to your instance.
 - Thirdly, you need to install a [docker](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html) in your ec2 instance.
 - Lastly, you can view how we have deployed our project on ec2 after completing above steps!! [EC2 deployment](https://youtu.be/nUiLzY_UcdI).
 
