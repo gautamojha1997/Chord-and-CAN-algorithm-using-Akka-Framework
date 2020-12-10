@@ -5,6 +5,7 @@ import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.testkit.TestActor.NullMessage.sender
 import com.simulation.CANActorDriver.timeout
+import com.simulation.ConnectToCassandra
 import com.simulation.actors.can.BootstrapActor._
 import com.simulation.actors.can.NodeActor.{addNeighbour, fetchDHT, getNeighbours, loadDataNode, removeNeighbour, transferDHT, updateCoordinatesNode}
 import com.simulation.beans.{Coordinates, EntityDefinition}
@@ -168,6 +169,14 @@ class BootstrapActor(system: ActorSystem) extends Actor {
       logger.info("Node where to load data => "+ nodeIndex)
       activeNodesActors(nodeIndex) ! loadDataNode(data)
       sender() ! nodeIndex
+
+      //change the confValue to true in application.conf to have data persistence
+      //make sure to install cassandra first
+
+      if(conf.getBoolean("enableCassandra")) {
+        activeNodesActors(nodeIndex) ! ConnectToCassandra.createTable()
+        activeNodesActors(nodeIndex) ! ConnectToCassandra.addToCassandra(data)
+      }
 
     case getSnapshotCAN() =>
       var outputString = ""
