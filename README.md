@@ -64,26 +64,31 @@ Cluster Sharding is an actor deployment model which is useful when it is needed 
 
 -  ServerActor
     - This class file represents actor-server which implements chord algorithm and defines messages as follows:
-        - case initializeFirstFingerTable(nodeIndex: Int) : It initializes the first finger table for the first server-node.
-        - case initializeFingerTable(nodeIndex: Int) : It initializes the finger table for all the server nodes after the first one.
-        - case updateOthers(activeNodes: mutable.TreeSet[Int]) : It updates all nodes whose finger table should refer to the new node which joins the network.
-        - case updateTable(s: Int, i: Int) : It is invoked by updateOthers which recursively updates finger-table.
-        - case updatePredecessor(nodeIndex: Int) : This case class updates the predecessor.
-        - case getSuccessor() : Returns the successor of the given entry.
-        - case getDataServer(id: Int, m: Int, hash: Int) : Returns output when looked-up is performed. 
+        - case class initializeFirstFingerTable(nodeIndex: Int) : It initializes the first finger table for the first server-node.
+        - case class initializeFingerTable(nodeIndex: Int, activeNodes: mutable.TreeSet[Int]) : It initializes the finger table for all the server nodes after the first one.
+        - case class updateOthers(activeNodes: mutable.TreeSet[Int]) : It updates all nodes whose finger table should refer to the new node which joins the network.
+        - case class updateTable(s: Int, i: Int) : It is invoked by updateOthers which recursively updates finger-table.
+        - case class getDataServer(nodeIndex: Int, hash:Int) : Returns output when looked-up is performed. 
+        - case class loadDataServer(data: EntityDefinition, nodeIndex: Int, hash: Int) : Loads the data to the server by calling method loadData.
+        - case class removeNodeServer(activeNodes: mutable.TreeSet[Int]) : It handles fault tolerance of chord by removing a particular node, updating finger table of other nodes and transfer data to proper other node after the removal of that particular node.
+        - case class Envelope(nodeIndex : Int, command: Command) extends Serializable : A serializable class which is used to extract id for the entity actor and id for the shard that entity actor belongs to. The Entity Id is extracted by simply taking string value of the node index and for shard id it is extracted by hashing entity id with modulo number of shards (Math.abs(nodeIndex.toString.hashCode % num_of_shards).toString).
     - Also, the class defines following methods :
         - getData(id: Int, m: Int, hash: Int) : Returns result in the form of string when invoked by getDataServer(id: Int, m: Int, hash: Int).
-        - findSuccessor(nodeIndex: Int) : Returns successor value for the given node by fetching successor value for an arbitrary node and eventually updating the successor value for the given node.
-        - findPredecessor(nodeIndex: Int) : Returns predecessor value for the given node by invoking another method closestPrecedingFinger(nodeIndex: Int) which returns finger table value for the given node.
+        - findSuccessor(nodeIndex: Int, activeNodesList:List[Int], entry:Int) : Returns successor value for the given node by fetching successor value for an arbitrary node and eventually updating the successor value for the given node.
+        - extendDHT(activeNodes: mutable.TreeSet[Int]) : 
         - belongs(s:Int, n: Int, successorValue: Int) : Invoked by updateTable() to check whether the node belongs within the range of predecessor and fingerIthEntry value.
+        - def loadData(data: EntityDefinition, nodeIndex: Int, hash: Int) : Returns result in the form of string when invoked by loadDataServer(data: EntityDefinition, nodeIndex: Int, hash: Int).
+        - def startMerchantSharding(system: ActorSystem, id: Int, numNodes : Int): Returns reference of the sharded server actor when called by the driver.
         
 - UserActor
     - This class file represents actor-user and defines messages as follows:
         - case class loadData(data:EntityDefinition) : Returns result of the loaded data from the server to the user. 
-        - case getDataUserActor(id) : Returns result by looking up data from the server.
-        - case createUserActor(id) : Returns path of created user actor.
+        - case class getDataUserActor(id:Int) : Returns result by looking up data from the server.
+        - case class createUserActor(id:Int) : Returns path of created user actor.
+        
 - SupervisorActor 
     - This class acts as a bridge between user and the server actor. The user actor invokes the messages defined in this class which returns results by invoking messages defined in the ServerActor.
+    
 - FingerActor
     - This actor is used to simulate the fingerTable.
 	- case class fetchFingerTable(nodeIndex: Int): It is used to fetch finger Table of a given node
@@ -96,27 +101,32 @@ Cluster Sharding is an actor deployment model which is useful when it is needed 
 	- case class setPredecessor(nodeIndex: Int, value: Int): It is used to set the predecessor of a given node
 	- case class fetchData(nodeIndex: Int, key: Int): It is used to fetch the data stored at the node
 	- case class storeData(nodeIndex: Int, dht: EntityDefinition): It is used to store the data stored at that node
+	- case class extendData(nodeIndex: Int, dht: mutable.HashMap[Int, String]) : 
+	- case class containsData(nodeIndex: Int)
+	
 - Utility 
     - This object file takes a string and number of bits to return hashed value used for generating keys inserted into DHT and for data units.
     - The hashing algorithm used is MD5.
+    
 - Data.csv
     - Represents the movie data in id & name format.     
 ## Results
 
 1.Adding Node : Adding the created node.
 
-- First Node Added : 13
+- First Node Added : 11
 
 ```
-INFO  [SupervisorActor]: Sever Actor Created: 13
-INFO  [ServerActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 13)
+INFO  [SupervisorActor]: Sever Actor Created: 11
+INFO  [ServerActor]: LinkedHashMap(12 -> 11, 13 -> 11, 15 -> 11, 3 -> 11)
 ```
 
-- Second Node Added : 6
+- Second Node Added : 12
 
 ```
-INFO  [SupervisorActor]: Sever Actor Created: 6
-INFO  [ServerActor]: ActorSelection[Anchor(akka://actorSystem/), Path(/user/server_actor_13)]
+INFO  [SupervisorActor]: Sever Actor Created: 12
+INFO  [ServerActor]: Checking Values of FingerTableList((12,11), (13,11), (15,11), (3,11))
+INFO  [ServerActor]: Checking Values of FingerTableList((13,12), (14,12), (0,12), (4,11))
 ```
 
 2.Load Data : Using id=7 to load data at any server node (The id has to be passed at the end of the url as follows: ?id=7)
@@ -125,44 +135,46 @@ INFO  [ServerActor]: ActorSelection[Anchor(akka://actorSystem/), Path(/user/serv
 ```
 INFO  [WebService$]: In loadData webservice
 INFO  [WebService$]: In loadData webservice
-INFO  [ActorDriver$]: In loadData driver
-INFO  [UserActor]: In loadData UserActor
+INFO  [ChordActorDriver$]: In loadData driver
+INFO  [UserActor]: Loading data using user actor
 INFO  [SupervisorActor]: In loadDataSupervisor SupevisorActor
-INFO  [ServerActor]: Checking if 4 belongs in the range 7 - 9
-INFO  [ServerActor]: Checking if 4 belongs in the range 8 - 11
-INFO  [ServerActor]: Checking if 4 belongs in the range 10 - 15
-INFO  [ServerActor]: Checking if 4 belongs in the range 14 - 8
-INFO  [ServerActor]: Data stored at 6
+INFO  [ServerActor]: Checking if 4 belongs in the range 12 - 14
+INFO  [ServerActor]: Checking if 4 belongs in the range 13 - 16
+INFO  [ServerActor]: Checking if 4 belongs in the range 15 - 4
+INFO  [ServerActor]: Checking if 4 belongs in the range 3 - 13
+INFO  [ServerActor]: Data stored at 12
 ```
 - WebService result
-    - Loaded Data at 6 : ```Added: Id: 7, Name: Waiting For Forever```
+    - Loaded Data at 12 : ```Added: Id: 7, Name: Waiting For Forever```
 
 3.Lookup Data : Looking up data with id = 7 to check whether the data loaded at 6 can be retrieved. (The id has to be passed at the end of the url as follows: ?id=7)
 
 ```
-INFO  [ServerActor]: Checking if 4 belongs in the range 7 - 9
-INFO  [ServerActor]: Checking if 4 belongs in the range 8 - 11
-INFO  [ServerActor]: Checking if 4 belongs in the range 10 - 15
-INFO  [ServerActor]: Checking if 4 belongs in the range 14 - 8
-INFO  [ServerActor]: Data was stored at 6  
+INFO  [ServerActor]: Data stored at 12
+INFO  [UserActor]: Fetching data from server actor
+INFO  [ServerActor]: Checking if 4 belongs in the range 12 - 14
+INFO  [ServerActor]: Checking if 4 belongs in the range 13 - 16
+INFO  [ServerActor]: Checking if 4 belongs in the range 15 - 4
+INFO  [ServerActor]: Checking if 4 belongs in the range 3 - 13
+INFO  [ServerActor]: Data was stored at 12 
 ```
 
 - WebService result
-    - Looking Up data at 6 : ```Lookup value: 7 Some(Waiting For Forever)```
+    - Looking Up data at 12 : ```Lookup value: 7 Some(Waiting For Forever)```
 
 4.Snapshot : Returns the overall Fingertable value.
 
 ```
 INFO  [WebService$]: Snapshot Web Service
-INFO  [ActorDriver$]: Print Snapshot Driver
+INFO  [ChordActorDriver$]: Print Snapshot Driver
 INFO  [SupervisorActor]: Get Snapshot
-INFO  [SupervisorActor]: LinkedHashMap(7 -> 13, 8 -> 13, 10 -> 13, 14 -> 6)
+INFO  [SupervisorActor]: LinkedHashMap(12 -> 12, 13 -> 11, 15 -> 11, 3 -> 12)
 INFO  [SupervisorActor]: Get Snapshot
-INFO  [SupervisorActor]: LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 6)
+INFO  [SupervisorActor]: LinkedHashMap(13 -> 12, 14 -> 12, 0 -> 12, 4 -> 12)
 ```
 
 - Webservice result
-    - Snapshot created : ```6 -> LinkedHashMap(7 -> 13, 8 -> 13, 10 -> 13, 14 -> 6) 13 -> LinkedHashMap(14 -> 13, 15 -> 13, 1 -> 13, 5 -> 6)```
+    - Snapshot created : ```11 -> LinkedHashMap(12 -> 12, 13 -> 11, 15 -> 11, 3 -> 12) 12 -> LinkedHashMap(13 -> 12, 14 -> 12, 0 -> 12, 4 -> 12)```
     
 5.MonteCarlo : Generates random requests based on the number specified. In order to introduce randomness, the eval function of the R client is used.
 
@@ -222,7 +234,19 @@ INFO  [WebService$]: 1.AddNode: NodeAdded
 - Webservice result
     - MonteCarlo result : ```1.AddNode: NodeAdded 3.LoadData(49): Id: 49, Name: Knocked Up 1.AddNode: NodeAdded 3.LoadData(34): Id: 34, Name: New Year's Eve 1.AddNode: NodeAdded```
     
-- 6 Cassandra logs 
+6. Remove Node : Removing the node using id of the node created. Here we will remove node 11 as id=11.
+
+- Node Removed : 11
+```
+INFO  [WebService$]: In removeNode webservice
+INFO  [WebService$]: In removeNode webservice
+INFO  [ServerActor]: Removing node with index = 11
+```
+
+Snapshot after node 11 is removed : ```12 -> LinkedHashMap(13 -> 12, 14 -> 12, 0 -> 12, 4 -> 12)```
+
+
+7.Cassandra logs 
 ```
   INFO  [Cluster]: New Cassandra host localhost/127.0.0.1:9042 added
   INFO  [ActorDriver$]: Table created if it does not exist
