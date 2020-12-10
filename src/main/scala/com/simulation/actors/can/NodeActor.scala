@@ -3,7 +3,7 @@ package com.simulation.actors.can
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.ShardRegion.{ExtractEntityId, ExtractShardId}
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
-import com.simulation.actors.can.NodeActor.{addNeighbour, fetchDHT, getNeighbours, loadDataNode, removeNeighbour, updatePredecessor}
+import com.simulation.actors.can.NodeActor.{addNeighbour, fetchDHT, getNeighbours, loadDataNode, removeNeighbour, updateCoordinatesNode, updatePredecessor}
 import com.simulation.beans.{Coordinates, EntityDefinition}
 import com.typesafe.config.ConfigFactory
 
@@ -41,6 +41,12 @@ class NodeActor extends Actor{
     case removeNeighbour(server: Int) =>{
       neighbours.remove(server)
     }
+
+    case updateCoordinatesNode(coordinates: Coordinates) =>
+      if(neighbours.contains(coordinates.nodeIndex)){
+        neighbours(coordinates.nodeIndex) = coordinates
+      }
+
   }
 }
 
@@ -55,6 +61,7 @@ object NodeActor{
   case class updatePredecessor(server: Int)
   case class getNeighbours()
   case class removeNeighbour(server: Int)
+  case class updateCoordinatesNode(coordinates: Coordinates)
 
   case class Envelope(nodeIndex : Int, command: Command) extends Serializable
 

@@ -39,7 +39,8 @@ object WebService {
               "<form action=\"http://localhost:8080/addNodeCAN\">\n    <input type=\"submit\" value=\"Add Node\" />\n</form>" +
                 "<form action=\"http://localhost:8080/loadDataCAN\">\n    <input type=\"submit\" value=\"Load Data\" />\n</form>" +
                 "<form action=\"http://localhost:8080/lookupCAN\">\n    <input type=\"submit\" value=\"Lookup Data\" />\n</form>" +
-                "<form action=\"http://localhost:8080/snapshotCAN\">\n    <input type=\"submit\" value=\"Snapshot\" />\n</form>" ))
+                "<form action=\"http://localhost:8080/snapshotCAN\">\n    <input type=\"submit\" value=\"Snapshot\" />\n</form>" +
+                "<form action=\"http://localhost:8080/removeNodeCAN\">\n    <input type=\"submit\" value=\"Remove Node\" />\n</form>"))
           },
           path("chord"){
             complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,
@@ -90,7 +91,7 @@ object WebService {
               (id) =>
                 if(nodeAdded){
                   val result = CANActorDriver.removeNode(id.toInt)
-                    complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Node removed: " + id))
+                  complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "Node removed: " + id))
                 }
                 else{
                   complete(HttpEntity(ContentTypes.`text/html(UTF-8)`,

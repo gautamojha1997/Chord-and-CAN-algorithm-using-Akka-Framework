@@ -3,9 +3,9 @@ package com.simulation.actors.can
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
-import com.simulation.CANActorDriver.{timeout}
+import com.simulation.CANActorDriver.timeout
 import com.simulation.actors.can.BootstrapActor._
-import com.simulation.actors.can.NodeActor.{addNeighbour, fetchDHT, getNeighbours, loadDataNode, removeNeighbour, updatePredecessor}
+import com.simulation.actors.can.NodeActor.{addNeighbour, fetchDHT, getNeighbours, loadDataNode, removeNeighbour, updateCoordinatesNode, updatePredecessor}
 import com.simulation.beans.{Coordinates, EntityDefinition}
 import com.typesafe.config.ConfigFactory
 import org.slf4j.{Logger, LoggerFactory}
@@ -89,6 +89,12 @@ class BootstrapActor(system: ActorSystem) extends Actor {
     ""
   }
 
+  def updateCoordinates(node: Coordinates) :Unit = {
+    activeNodesActors.foreach{case(index, actor)  => {
+      actor ! updateCoordinatesNode(node)
+    }}
+  }
+
   override def receive: Receive = {
 
     case createServerActorCAN(serverCounter: Int) => {
@@ -111,6 +117,7 @@ class BootstrapActor(system: ActorSystem) extends Actor {
         }
         findNeighbours(serverCounter, nodeActor)
         updateNeighbours(nodeIndex)
+        updateCoordinates(activeNodes(nodeIndex))
       }
       logger.info("Active nodes" + activeNodes)
       activeNodesActors += serverCounter -> nodeActor
@@ -134,7 +141,7 @@ class BootstrapActor(system: ActorSystem) extends Actor {
         val resultFuture = actor ? getNeighbours()
         val result = Await.result(resultFuture, timeout.duration)
         logger.info(result.toString)
-        outputString += node +" -> " +result.toString + "<br>"
+        outputString += node + " "+ activeNodes(node) +" -> " +result.toString + "<br>"
       }}
       sender() ! outputString
     }
@@ -161,4 +168,5 @@ object BootstrapActor {
   case class getSnapshotCAN()
   case class getCanNodes()
   case class removeBootstrapNode(nodeIndex:Int)
+
 }
