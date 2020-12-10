@@ -28,7 +28,7 @@ open source toolkit for designing scalable, resilient systems that span processo
 
 ### Docker
 - The docker image of the repository has been uploaded to dockerhub
-- In order to pull the image to your system, use the following command - ``` docker pull mkelka3/course_project:1.0 ```
+- In order to pull the image to your system, use the following command - ``` docker pull mkelka3/course_project:1.1 ```
 - In order to get the image id, use the following command - ```docker images```
 - Now, to run the image - ```docker run -t --network host <imageid>```
 
