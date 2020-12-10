@@ -5,10 +5,9 @@ import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
 import akka.pattern.ask
 import akka.remote.transport.ActorTransportAdapter.AskTimeout
 import akka.util.Timeout
-import com.simulation.actors.chord.servers.ServerActor.{findSuccessor, getDataServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, removeNodeServer, updateOthers, updateTable}
+import com.simulation.actors.chord.servers.ServerActor.{getDataServer, initializeFingerTable, initializeFirstFingerTable, loadDataServer, removeNodeServer, updateOthers, updateTable}
 import com.simulation.beans.EntityDefinition
 import org.slf4j.{Logger, LoggerFactory}
-import com.simulation.utils.ApplicationConstants
 import com.simulation.utils.FingerActor.{containsData, extendData, fetchData, fetchDataValue, fetchFingerTable, getFingerValue, getPredecessor, getSuccessor, setFingerValue, setPredecessor, setSuccessor, storeData, updateFingerTable}
 import com.simulation.utils.Utility.md5
 import com.typesafe.config.ConfigFactory
@@ -19,7 +18,6 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
-import scala.util.control.Breaks.break
 
 class ServerActor(id: Int, numNodes: Int) extends Actor {
 
@@ -67,37 +65,13 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
     /**
      * It initializes the finger table for all the server nodes after the first one.
      */
-    case initializeFingerTable(nodeIndex: Int) =>
-      val firstKey = ((id + math.pow(2, 0)) % numNodes).toInt
-      val arbitraryNode = context.system.actorSelection(ApplicationConstants.SERVER_ACTOR_PATH + nodeIndex)
-      logger.info(arbitraryNode.toString())
-      val successorValue = arbitraryNode ? findSuccessor(firstKey)
-      val firstVal = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
-      finger_table += (firstKey -> firstVal)
-      fingerNode ! setSuccessor(id, firstVal)
-      val newPredecessor = fingerNode ? getPredecessor(firstVal)
-      val newPredecessorR = Await.result(newPredecessor, timeout.duration).asInstanceOf[Int]
-      fingerNode ! setPredecessor(id, newPredecessorR)
-      fingerNode ! setPredecessor(newPredecessorR, id)
-
-      logger.info("First Instance: " + finger_table.toString)
-
-      (0 to buckets-2).foreach({ i =>
-        val key = ((id + math.pow(2, i + 1)) % math.pow(2, buckets)).toInt
-        val initialValue = finger_table.toSeq(i)._2
-        if(belongs(key, id, initialValue)) {
-          val successorValueR = initialValue
-          finger_table += (key -> successorValueR)
-        }
-        else{
-          val successorValue = arbitraryNode ? findSuccessor(key)
-          val successorValueR = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
-          finger_table += (key -> successorValueR)
-        }
-      })
-      logger.info("Second Instance: " + finger_table.toString)
+    case initializeFingerTable(nodeIndex: Int, activeNodes: mutable.TreeSet[Int]) =>
+      val activeNodesList = activeNodes.toList
+      (0 until buckets).foreach { entry =>
+        finger_table +=  (((nodeIndex + math.pow(2, entry)) % math.pow(2, buckets)).toInt ->
+          findSuccessor(nodeIndex, activeNodesList, entry))
+      }
       fingerNode ! updateFingerTable(finger_table, id)
-
 
     /**
      * It updates all nodes whose finger table should refer to the new node which joins the network.
@@ -115,6 +89,7 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
         })
         logger.info("Checking Values of FingerTable"+fTableR.toString)
       }
+      sender() ! " "
 
     /**
      * Loads data to the server
@@ -130,18 +105,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       sender() ! output
 
     /**
-     * Returns successor value for the given node by fetching successor value for an arbitrary node and eventually updating the successor value for the given node.
-     */
-    case findSuccessor(nodeIndex: Int) =>
-      logger.info("In find successor, node index = " + nodeIndex + " id = " + id)
-      val arbitraryNode: Int = findPredecessor(nodeIndex)
-      logger.info("In find successor, predecessor value = " + arbitraryNode)
-      val successorValue = fingerNode ? getSuccessor(arbitraryNode)
-      val successorValueR = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
-      logger.info("Successor Found, value = " + successorValueR)
-      sender() ! successorValueR
-
-    /**
      * Removes node from chord, updates finger table of other nodes and transfer data to proper node
      * */
     case removeNodeServer(activeNodes: mutable.TreeSet[Int]) =>
@@ -150,15 +113,10 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       activeNodes.remove(id)
       val activeNodesList = activeNodes.toList
       (0 until activeNodesList.size).foreach { nodeIndex =>
-        val temp = activeNodesList(nodeIndex)
-        val fTable = fingerNode ? fetchFingerTable(activeNodesList(nodeIndex))
-        val fTableR = Await.result(fTable, timeout.duration).asInstanceOf[mutable.LinkedHashMap[Int,Int]].toSeq
         (0 until buckets).foreach({ fingerIndex =>
           val fingerValue = fingerNode ? getFingerValue(activeNodesList(nodeIndex), fingerIndex)
           val fingerValueR = Await.result(fingerValue, timeout.duration).asInstanceOf[Int]
           if(fingerValueR == id) {
-            val successorValue = fingerNode ? getSuccessor(activeNodesList(nodeIndex))
-            val successorValueR = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
             fingerNode ! setFingerValue(activeNodesList(nodeIndex), fingerIndex, activeNodesList(nodeIndex))
           }
         })
@@ -168,6 +126,16 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       if(checkDataR && activeNodes.size > 0)
         extendDHT(activeNodes)
       sender() ! true
+  }
+
+  def findSuccessor(nodeIndex:Int, activeNodesList:List[Int], entry:Int): Int ={
+    val firstVal = ((nodeIndex + math.pow(2, entry)) % numNodes).asInstanceOf[Int]
+    val secondVal = ((nodeIndex + math.pow(2, (entry+1) % buckets)) % numNodes).asInstanceOf[Int]
+    (0 until activeNodesList.size).foreach { index =>
+      if(belongs(activeNodesList(index), firstVal, secondVal+1))
+        return activeNodesList(index)
+    }
+    nodeIndex
   }
 
   /**
@@ -238,43 +206,6 @@ class ServerActor(id: Int, numNodes: Int) extends Actor {
       movieNameR = getData(fTableR(buckets-1)._2, hash)
     nodeIndex+" "+movieNameR
   }
-
-  /**
-   * Returns predecessor value for the given node by invoking another method closestPrecedingFinger(nodeIndex: Int) which returns finger table value for the given node.
-   * @param nodeIndex
-   * @return
-   */
-  def findPredecessor(nodeIndex: Int): Int ={
-    logger.info("In find predecessor, node index = "+nodeIndex+" id = "+id)
-    var arbitraryNode = id
-    val successorValue = fingerNode ? getSuccessor(arbitraryNode)
-    val successorValueR = Await.result(successorValue, timeout.duration).asInstanceOf[Int]
-    while(!belongs(nodeIndex, arbitraryNode , successorValueR)){
-      arbitraryNode =  closestPrecedingFinger(nodeIndex)
-    }
-    logger.info("Predecessor found, value = "+arbitraryNode)
-    arbitraryNode
-  }
-
-  /**
-   * Finds the closest preceding finger entry for the given nodeIndex
-   * @param nodeIndex
-   * @return
-   */
-  def closestPrecedingFinger(nodeIndex: Int): Int = {
-    var closestIndex = id
-    for (i <- (0 until buckets).reverse) {
-      val fingerValue = fingerNode ? getFingerValue(id, i)
-      val fingerValueR = Await.result(fingerValue, timeout.duration).asInstanceOf[Int]
-      logger.info("In closest preceeding finger, value = "+fingerValueR+"")
-      if(belongs(fingerValueR, id, nodeIndex)){
-        logger.info("Found closest preceding finger, value = " + fingerValueR)
-        closestIndex = fingerValueR
-      }
-    }
-    logger.info("Found closest preceding finger, value = " + id)
-    closestIndex
-  }
 }
 
 object ServerActor {
@@ -284,11 +215,10 @@ object ServerActor {
 
   private val conf = ConfigFactory.load("application.conf")
 
-  case class initializeFingerTable(nodeIndex: Int)
+  case class initializeFingerTable(nodeIndex: Int, activeNodes: mutable.TreeSet[Int])
   case class initializeFirstFingerTable(nodeIndex: Int)
   case class getDataServer(nodeIndex: Int, hash:Int)
   case class loadDataServer(data: EntityDefinition, nodeIndex: Int, hash: Int)
-  case class findSuccessor(index: Int)
   case class updateOthers(activeNodes: mutable.TreeSet[Int])
   case class updateTable(s: Int, i: Int)
   case class removeNodeServer(activeNodes: mutable.TreeSet[Int])
