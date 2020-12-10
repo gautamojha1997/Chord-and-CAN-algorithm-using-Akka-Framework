@@ -406,7 +406,7 @@ After understanding the concepts CAN & the Chord algorithm, we have implemented 
 - Likewise, this is evident by the number of nodes in the architecture. Chord performance remains more or less the same as long as the ring size is the same. But, for CAN the difference is noticeable. As nodes increase, performance suffers.
 - Add node for both algorithms shows stark difference, since in Chord we have to update all the finger tables when a new node is added. Whereas in CAN, only the node being split & the corresponding neighbours are updated.
 - Load data works differently for both as in Chord, only a particular node is responsible for that key. So, the data has to be loaded to that key only. CAN has a liberty of loading the data anywhere. Thus, it performs better.
-- Lookup data is debatable as Chord achieves constant execution times due to limited hops. However, CAN shows inconsistency since routing between 2 nodes only occurs by hoping through neighbours. As we increase, the number of nodes, this metric suffers.
+- Lookup data is debatable as Chord achieves constant execution times due to limited hops. However, CAN shows inconsistency since routing between 2 nodes only occurs by hoping through neighbours. As we increase the number of nodes, this metric suffers.
 - Similar to add, remove node in Chord deals with updating all the nodes's finger tables. Whereas, in CAN only the neighbours are concerned with the deletion.
 - Chord's performance shown is slighly  poorer to CAN as per the above diagram but that is down to size of the architecture, the presence of multiple actors & their communication as compared to CAN. However, as the number of nodes will increase, the statistics would turn around due to the growth of their functions.
 
