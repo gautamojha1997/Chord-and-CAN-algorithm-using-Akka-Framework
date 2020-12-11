@@ -41,22 +41,29 @@ The simulation is done by generating random requests to the API. In order to int
 - #### [Cassandra](https://cassandra.apache.org/)
 Apache Cassandra is a free and open-source, distributed, wide column store, NoSQL database management system designed to handle large amounts of data across many commodity servers, providing high availability with no single point of failure. Cassandra offers robust support for clusters spanning multiple datacenters, with asynchronous masterless replication allowing low latency operations for all clients. We have used Cassandra to save the state of server actors, the movie id and movie name has been stored & fetched after the server actor loads the data.
 - #### [Akka Cluster Sharding](https://doc.akka.io/docs/akka/current/typed/cluster-sharding.html)
-Cluster Sharding is an actor deployment model which is useful when it is needed to distribute actors across several nodes in the cluster. Logical identifier of the actors are used to be able to interact with them without being concerned about their physical location in the cluster.
+Cluster Sharding is an actor deployment model which is useful when it is needed to distribute actors across several nodes in the cluster. Logical identifier of the actors are used to be able to interact with them without being concerned about their physical location in the cluster. 
+Referred from: [Tour of Akka Cluster – Cluster Sharding](https://manuel.bernhardt.io/2018/02/26/tour-akka-cluster-cluster-sharding/).
 
-## Chord Algorithm
+### Coding Structure
 
-### Coding Structure for chord
-
+- Utility
+    - This object file takes a string and number of bits to return hashed value used for generating keys inserted into DHT and for data units.
+    - The hashing algorithm used is MD5.
+- Data.csv
+    - Represents the movie data in id & name format.
 - WebService 
     - This is the entry point for our project, this scala file uses Akka-HTTP library for making routes for different options to run the simulations 
     by calling methods for required simulation task.
-    - After running this object file you get a link ```http://localhost:8080/``` which will redirect to the webpage with 2 options: 1. Chord 2. CAN
-    - After clicking on chord you will redirected to the webpage with 5 buttons:
-        - Add Node : Clicking this button calls method createServerNode() which adds node.
-        - Load Data : Clicking this button calls method loadData(id.toInt) which loads the result in the form of string in the server. To load data append ?id=<any integer> to your link.
-        - Lookup Data : Clicking this button calls method getData(id.toInt) which is used by the user to look data over a server node using Chord Protocol. To look-up data append ?id=<any integer> to your link.
-        - Snapshot : Clicking this button simply returns all the result for the simulation.
-        - Montecarlo : Clicking this button invokes the Rclient object to randomly select the 4 options from above. The 4 options are generated randomly and they are : 1.AddNode, 2.Snapshot, 3.LoadData, 4.LookupData. To use Monte-Carlo append ?number=<any integer> to your link.
+    - After running this object file you get a link ```http://localhost:8080/``` which will redirect to the webpage with 2 options: 
+    
+### 1.Chord
+- After clicking on chord you will redirected to the webpage with 6 buttons:
+    - Add Node : Clicking this button calls method createServerNode() which adds node.
+    - Load Data : Clicking this button calls method loadData(id.toInt) which loads the result in the form of string in the server. To load data append ?id=<any integer> to your link.
+    - Lookup Data : Clicking this button calls method getData(id.toInt) which is used by the user to look data over a server node using Chord Protocol. To look-up data append ?id=<any integer> to your link.
+    - Snapshot : Clicking this button simply returns all the result for the simulation.
+    - Remove Node : Clicking this button calls method removeNode() which remove node.
+    - Montecarlo : Clicking this button invokes the Rclient object to randomly select the 4 options from above. The 4 options are generated randomly and they are : 1.AddNode, 2.Snapshot, 3.LoadData, 4.LookupData. To use Monte-Carlo append ?number=<any integer> to your link.
         
 - ChordActorDriver
     - This object file defines the number of users, servers, ActorSystem, Actors (serverActor, userActor, supervisorActor, fingerActor).
@@ -103,14 +110,49 @@ Cluster Sharding is an actor deployment model which is useful when it is needed 
 	- case class storeData(nodeIndex: Int, dht: EntityDefinition): It is used to store the data stored at that node
 	- case class extendData(nodeIndex: Int, dht: mutable.HashMap[Int, String]) : It is used to add the data of deleted node to a node with index "nodeIndex"
 	- case class containsData(nodeIndex: Int): This is used to check if a given node has any data stored in it.
-	
-- Utility 
-    - This object file takes a string and number of bits to return hashed value used for generating keys inserted into DHT and for data units.
-    - The hashing algorithm used is MD5.
     
-- Data.csv
-    - Represents the movie data in id & name format.     
+### 2.CAN
+- After clicking on CAN you will redirected to the webpage with 6 buttons:
+  - Add Node : Clicking this button calls method createServerNodeCAN() which adds node.
+  - Load Data : Clicking this button calls method loadData(id.toInt) which loads the result in the form of string in the server. To load data append ?id=<any integer> to your link.
+  - Lookup Data : Clicking this button calls method getData(id.toInt) which is used by the user to look data over a server node using Chord Protocol. To look-up data append ?id=<any integer> to your link.
+  - Snapshot : Clicking this button simply returns all the result for the simulation.
+  - Remove Node : Clicking this button calls method removeNode() which remove node.
+  - Montecarlo : Clicking this button invokes the Rclient object to randomly select the 4 options from above. The 4 options are generated randomly and they are : 1.AddNode, 2.Snapshot, 3.LoadData, 4.LookupData. To use Monte-Carlo append ?number=<any integer> to your link.
+
+- CANActorDriver
+    - This object file defines the number of active servers, ActorSystem, Actors (nodeActor, bootstrapActor).
+    - It also defines methods used by Webservices and defined in the actor class files to load data, lookup data and display the result.
+    
+- BootstrapActor
+    - Class which handles the bootstrap server actor which keeps track of all CAN nodes and defines messages as follows:
+        - case class createServerActorCAN(serverCount: Int) : Creates a new node actor & adds a node & updates the neighbours
+        - case class getDataBootstrapCAN(id: Int) : Fetches the data using id
+        - case class loadDataBootstrapCAN(data: EntityDefinition) : Loads the data id & value in any node
+        - case class getSnapshotCAN() : Gets the system state by fetching all nodes & their neighbours
+        - case class removeBootstrapNode(nodeIndex:Int) : Removes an added node & updates its neighbours 
+    - Also, the class defines following methods :
+        - findNeighbours(server: Int, nodeActor:ActorRef): Fetches all the neighbours of current node
+        - belongs(x1: Double, x2: Double, x3: Double, x4: Double, y1: Double, y2: Double, y3: Double, y4: Double): Method checks if 2 nodes are neighbours using cartesian coordinates
+        - findXneighbours(node: Coordinates, nodeActor: ActorRef): Finds all the X axis neighbours
+        - findYneighbours(node: Coordinates, nodeActor: ActorRef): Finds all the Y axis neighbours
+        - updateNeighbours(nodeIndex : Int): Updates neighbours when node a node is split to check if neighbours have changed
+        - searchNode(start:Int, id:Int): Hops thru neighbours using dfs to locate the node where id exists
+        - updateCoordinates(node: Coordinates) : Update node coordinate changes to consequent nodes
+- NodeActor
+    - Class to handle the individual node, manage its neighbours & data and defines messages as follows:
+        -  case class fetchDHT() : Returns all the keys & values that the node has saved
+        -  case class loadDataNode(data: EntityDefinition) : load data into that node
+        -  case class addNeighbour(coordinates: Coordinates) : Add a new neighbour to the node
+        -  case class getNeighbours() : Get all the existing neighbours of node
+        -  case class removeNeighbour(server: Int) : Remove an existing neighbour from the node
+        -  case class updateCoordinatesNode(coordinates: Coordinates) : Updates the coordinates of the neighbours 
+        -  case class transferDHT(dhtTransfer: mutable.HashMap[Int, String]) : Appends the hashmaps of 2 nodes - current & transfered
+        - case class Envelope(nodeIndex : Int, command: Command) extends Serializable : A serializable class which is used to extract id for the entity actor and id for the shard that entity actor belongs to. The Entity Id is extracted by simply taking string value of the node index and for shard id it is extracted by hashing entity id with modulo number of shards (Math.abs(nodeIndex.toString.hashCode % num_of_shards).toString).
+
 ## Results
+
+### 1. Chord
 
 1.Adding Node : Adding the created node.
 
@@ -262,6 +304,121 @@ INFO  [WebService$]: 1.AddNode: NodeAdded
   INFO  [ActorDriver$]: Fetching the stored data from Cassandra: [Row[43, Love Happens], Row[4, Water For Elephants], Row[7, Waiting For Forever], Row[57, Good Luck Chuck], Row[56, Dear John]]
 ```
 
+
+### 2. CAN 
+
+1.Adding a node : Add the created node.
+
+- Adding first node:
+
+```
+INFO  [CANActorDriver$]: Add Node Driver
+INFO  [BootstrapActor]: Node being added => 0
+INFO  [BootstrapActor]: Active nodesHashMap(0 -> Coordinates(0,0.0,1.0,0.0,1.0))
+```
+
+- Adding Second node:
+
+```
+INFO  [CANActorDriver$]: Add Node Driver
+INFO  [BootstrapActor]: Node being added => 1
+INFO  [BootstrapActor]: Node being split => 0
+INFO  [BootstrapActor]: Neighbour of server Coordinates(1,0.0,1.0,0.5,1.0) -> Coordinates(0,0.0,1.0,0.0,0.5)
+INFO  [BootstrapActor]: Updating coordinates of node => Coordinates(0,0.0,1.0,0.0,0.5)
+INFO  [BootstrapActor]: Active nodesHashMap(0 -> Coordinates(0,0.0,1.0,0.0,0.5), 1 -> Coordinates(1,0.0,1.0,0.5,1.0))
+```
+
+2.Load Data : Using id=3 to load data at the created server above(The id has to be passed at the end of the url as follows: ?id=3)
+
+```
+INFO  [WebService$]: In loadData webservice
+INFO  [WebService$]: In loadData webservice
+INFO  [CANActorDriver$]: Load data Driver
+INFO  [BootstrapActor]: Node where to load data => 0
+```
+
+3.Lookup Data : Looking up data with id=3 to check whether the data is loaded at the created node 0.
+```
+INFO  [CANActorDriver$]: Get data Driver
+INFO  [BootstrapActor]: Get row => 3
+INFO  [BootstrapActor]: Searching id = 3 -> Starting from node =0
+INFO  [BootstrapActor]: Found in node = 0
+```
+
+- Webservice result : ```Lookup value: What Happens in Vegas```
+
+4.Snapshot : Returns the overall Co-ordinate and map table.
+
+```
+INFO  [WebService$]: Snapshot Web Service
+INFO  [CANActorDriver$]: Print Snapshot Driver
+INFO  [BootstrapActor]: HashMap(1 -> Coordinates(1,0.0,1.0,0.5,1.0))
+INFO  [BootstrapActor]: HashMap(0 -> Coordinates(0,0.0,1.0,0.0,0.5))
+```
+
+- Webservice result: 
+```
+Snapshot created
+0 Coordinates(0,0.0,1.0,0.0,0.5) -> HashMap(1 -> Coordinates(1,0.0,1.0,0.5,1.0))
+1 Coordinates(1,0.0,1.0,0.5,1.0) -> HashMap(0 -> Coordinates(0,0.0,1.0,0.0,0.5))
+```
+
+5.Remove Node : remove a node with id=0
+
+```
+INFO  [WebService$]: In removeNode webservice
+INFO  [WebService$]: In removeNode webservice
+INFO  [CANActorDriver$]: Remove node Driver
+INFO  [BootstrapActor]: Keys moved to 1
+INFO  [BootstrapActor]: Node removed
+```
+
+- Webservice result - ```Node removed: 0```
+
+6.Monte Carlo : Used the similar approach to chord, and the results are as follows:
+
+- Used number = 5 for CAN monteCarlo.
+
+```
+INFO  [WebService$]: choice = 4
+INFO  [WebService$]: choice = 4
+INFO  [WebService$]: choice = 2
+INFO  [WebService$]: choice = 2
+INFO  [WebService$]: choice = 1
+INFO  [CANActorDriver$]: Add Node Driver
+INFO  [WebService$]: 4.LookupDataCreate a node first
+4.LookupDataCreate a node first
+2.Snapshot: Create a node first
+2.Snapshot: Create a node first
+1.AddNode: NodeAdded
+```
+
+- Webservice result - ```4.LookupDataCreate a node first 4.LookupDataCreate a node first 2.Snapshot: Create a node first 2.Snapshot: Create a node first 1.AddNode: NodeAdded```
+
+## Evaluation of results
+
+After understanding the concepts CAN & the Chord algorithm, we have implemented both the algorithms. The differences between both the algorithms have been highlighted using the below statistics. We have added 8 nodes to each architecture & compared add, remove, load & lookup times for first and the average of other iterations. 
+
+
+### Differences
+- The Chord and CAN are both distributed P2P infrastructures. However, they are different in their architectures. Chord nodes form a ring or circle, and they just keep track of ranges/buckets using Finger Table. Whereas in CAN, a virtual multi-dimensional Cartesian coordinate space is formed and the nodes keep track of their immediate neighbours only. 
+- The Chord implementation increases linearly since active nodes times finger table entries determine performance rather than CAN which increases polynomially as Nodes times Neighbours determine performance. 
+- Likewise, this is evident by the number of nodes in the architecture. Chord performance remains more or less the same as long as the ring size is the same. But, for CAN the difference is noticeable. As nodes increase, performance suffers.
+- Add node for both algorithms shows stark difference, since in Chord we have to update all the finger tables when a new node is added. Whereas in CAN, only the node being split & the corresponding neighbours are updated.
+- Load data works differently for both as in Chord, only a particular node is responsible for that key. So, the data has to be loaded to that key only. CAN has a liberty of loading the data anywhere. Thus, it performs better.
+- Lookup data is debatable as Chord achieves constant execution times due to limited hops. However, CAN shows inconsistency since routing between 2 nodes only occurs by hoping through neighbours. As we increase the number of nodes, this metric suffers.
+- Similar to add, remove node in Chord deals with updating all the nodes's finger tables. Whereas, in CAN only the neighbours are concerned with the deletion.
+- Chord's performance shown is slighly  poorer to CAN as per the above diagram but that is down to size of the architecture, the presence of multiple actors & their communication as compared to CAN. However, as the number of nodes will increase, the statistics would turn around due to the growth of their functions.
+
+## AWS EC2 Deployment
+We have given the link to make your ec2 instance and how to connect to it and also how to install docker in ec2.
+
+- AWS [cli install](https://docs.aws.amazon.com/cli/latest/userguide/install-linux.html#install-linux-pip).
+
+- Firstly to start with AWS EC2 deployment one needs to create an [ec2 instance](https://docs.aws.amazon.com/quickstarts/latest/vmlaunch/step-1-launch-instance.html).
+- Secondly, after creating you need to [connect](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AccessingInstancesLinux.html) to your instance.
+- Thirdly, you need to install a [docker](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html) in your ec2 instance.
+- Lastly, you can view how we have deployed our project on ec2 after completing above steps!! [EC2 deployment](https://youtu.be/nUiLzY_UcdI).
 
 
 
