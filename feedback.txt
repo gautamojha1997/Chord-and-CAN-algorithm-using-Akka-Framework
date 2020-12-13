@@ -1,0 +1,7 @@
+Hi group 6,
+
+Good job on evaluating both the CAN and Chord DHT protocols.
+
+Your grade for the project is 20%.
+
+Abhijeet
