@@ -402,7 +402,7 @@ After understanding the concepts CAN & the Chord algorithm, we have implemented 
 
 ### Differences
 
-![Diff](https://bitbucket.org/cs441-fall2020/group_6/raw/03cf5431d2c9720f7fcb272861c6bd18539aa89b/image/comp.PNG)
+![Diff](image/comp.PNG)
 
 - The Chord and CAN are both distributed P2P infrastructures. However, they are different in their architectures. Chord nodes form a ring or circle, and they just keep track of ranges/buckets using Finger Table. Whereas in CAN, a virtual multi-dimensional Cartesian coordinate space is formed and the nodes keep track of their immediate neighbours only. 
 - The Chord implementation increases linearly since active nodes times finger table entries determine performance rather than CAN which increases polynomially as Nodes times Neighbours determine performance. 
